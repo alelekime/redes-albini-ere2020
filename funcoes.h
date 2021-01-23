@@ -18,6 +18,7 @@
 
 
 #define ENTRADA_MAX 4096
+#define MARCA_INICIO 01111110
 #define PATH_MAX 4096
 #define SOCK_PATH    "/home/username/echo_socket"
 

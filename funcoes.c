@@ -14,6 +14,19 @@ void lista_comandos_ajuda() {
   printf("-----------------------------------------------------------\n");
 }
 
+void protocolo_cliente(linha_comando *entrada, char *dado,int tipo, int tam, int seq) {
+  estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
+  p1 -> marcador = MARCA_INICIO;
+  p1 -> tamanho = tam;
+  p1 -> endereco_origem = 10;
+  p1 -> endereco_destino = 01;
+  p1 -> sequencia = seq;
+  p1 -> tipo = tipo;
+  char *dados;
+  int pariedade;
+
+}
+
 void funcaoLCD(linha_comando *entrada) {
   char *nome = malloc (strlen(entrada->diretorio));
   strncpy(nome, entrada->diretorio,(strlen(entrada->diretorio)-1)); // retira o \0 do final da string, dá problema na comaparação se nao tirar
@@ -24,7 +37,6 @@ void funcaoLCD(linha_comando *entrada) {
 }
 
 void funcaoLLS() {
-  printf("smms,s\n" );
   system ("ls");
 }
 void imprime_path() {
