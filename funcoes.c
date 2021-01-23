@@ -37,20 +37,13 @@ void imprime_path() {
 
 void le_comando( linha_comando *entrada) {
   char *entrada_buffer, *dados, *quebra, *nome ;
+  nome = (char*)malloc(sizeof(char));
   __fpurge (stdin); // limpa buffer
   fgets (entrada_buffer, ENTRADA_MAX, stdin);// recebe a linha de comdo do usuário
   dados = strdup (entrada_buffer); //aloca memoria do tamanho da linha de comando mais \0
+  strncpy(nome, dados,(strlen(dados)-1)); // retira o \0 do final da string, dá problema na comaparação do ls e lls
   quebra = strdup(strtok(dados," "));
-  printf("%s\n", entrada_buffer);
-  printf("%d\n",strlen(entrada_buffer) );
-  nome = (char*)malloc(sizeof(char));
-  // strncpy(dados, entrada_buffer,(strlen(entrada_buffer)-1));
-
-
   entrada->comando = quebra;
-  strncpy(dados, entrada_buffer,(strlen(entrada_buffer)-2));
-  printf("%s\n", dados);
-  printf("%d\n",strlen(dados) );
   if(!strcmp(entrada->comando, "cd")){
      quebra =  strdup(strtok(NULL, ""));//<nome_dir>
      entrada-> diretorio = quebra;
@@ -60,13 +53,10 @@ void le_comando( linha_comando *entrada) {
      entrada-> diretorio = quebra;
      printf("%s\n", entrada-> diretorio);
      funcaoLCD(entrada);   //efetua a troca de diretório - cliente
-  }else if(!strcmp(dados, "ls")){
-    printf("msdmsdds\n" );
+  }else if(!strcmp(nome, "ls")){
      //funcaoLS(); //lista arquivos - servidor
-  }else if(!strcmp(dados, "lls")){
-     quebra =  strdup(strtok(NULL, ""));//<nome_dir>
-    printf("asdas\n");
-     funcaoLLS(); //lista arquivos - cliente
+  }else if(!strcmp(nome, "lls")){
+    funcaoLLS(); //lista arquivos - cliente
   }else if(!strcmp(quebra, "ver")){
      quebra =  strdup(strtok(NULL, ""));//<nome_arq>
      entrada-> nome_arq = quebra;

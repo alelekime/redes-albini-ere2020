@@ -17,9 +17,6 @@ int main(int argc, char const *argv[]) {
     while(1){
       imprime_path();
       le_comando(&entrada);
-      printf(" main %s\n", entrada.comando);
-      printf("main %s\n", entrada.diretorio);
-
 }
 
   }else if (!strcmp( argv[1], "servidor")){
