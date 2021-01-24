@@ -73,7 +73,8 @@ void le_comando( linha_comando *entrada) {
     quebra =  strdup(strtok(NULL, ""));//<nome_arq>
     entrada-> nome_arq = quebra;
     //funcaoLINHA(); // mostra a linha escolida do arquivo
-  }else if(!strcmp(quebra, "linhas")){
+  }
+  else if(!strcmp(quebra, "linhas")){
     entrada -> linha_inicial =  atoi(strdup(strtok(NULL, " ")));//<numero_linha_inicial>
     entrada -> linha_final =  atoi(strdup(strtok(NULL, " ")));//<numero_linha_final>
     quebra =  strdup(strtok(NULL, ""));//<nome_arq>
