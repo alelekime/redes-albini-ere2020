@@ -20,7 +20,14 @@
 #define ENTRADA_MAX 4096
 #define MARCA_INICIO 01111110
 #define PATH_MAX 4096
-#define SOCK_PATH    "/home/username/echo_socket"
+#define CD 0000
+#define LS 0001
+#define VER 0010
+#define LINHA 0011
+#define LINHAS 0100
+#define EDIT 0101
+#define ACK 1000
+#define NACK 1001
 
 typedef struct linha_comando {
   char *comando;
@@ -33,10 +40,10 @@ typedef struct linha_comando {
 }linha_comando;
 
 typedef struct estrutura_pacote {
-  int marcador;
+  char *marcador;
   int tamanho;
-  int endereco_origem;
-  int endereco_destino;
+  char *endereco_origem;
+  char *endereco_destino;
   int sequencia;
   int tipo;
   char *dados;
@@ -49,3 +56,7 @@ void funcaoLCD(linha_comando *entrada);
 void funcaoLLS();
 void imprime_path();
 void le_comando( linha_comando *entrada);
+estrutura_pacote *protocolo_cliente(char *dado,int tipo, int tam, int seq);
+int cal_pariedade(int tam, int seq, int tipo, char *dado);
+long decimalToBinary(int decimalnum);
+void mostra_protocolo(estrutura_pacote *pacote);

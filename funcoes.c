@@ -1,30 +1,23 @@
 #include "funcoes.h"
 
-void lista_comandos_ajuda() {
-  printf("-----------------------------------------------------------\n");
-  printf(" * cd <nome_dir>\n");
-  printf(" * lcd <nome_dir> \n");
-  printf(" * ls \n");
-  printf(" * lls \n");
-  printf(" * ver <nome_arq> \n");
-  printf(" * ver <nome_arq> \n");
-  printf(" * linha <numero_linha> <nome_arq>\n");
-  printf(" * linhas <numero_linha_inicial> <numero_linha_final> <nome_arq> \n");
-  printf(" * edit <numero_linha> <nome_arq> “<NOVO_TEXTO>”  \n");
-  printf("-----------------------------------------------------------\n");
-}
 
-void protocolo_cliente(linha_comando *entrada, char *dado,int tipo, int tam, int seq) {
+estrutura_pacote *protocolo_cliente(char *dado,int tipo, int tam, int seq) {
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
-  p1 -> marcador = MARCA_INICIO;
-  p1 -> tamanho = tam;
-  p1 -> endereco_origem = 10;
-  p1 -> endereco_destino = 01;
+  p1 -> marcador = "01111110";
+  p1 -> tamanho = decimalToBinary(tam);
+  p1 -> endereco_origem = "10";
+  p1 -> endereco_destino ="01";
   p1 -> sequencia = seq;
   p1 -> tipo = tipo;
-  char *dados;
-  int pariedade;
+  p1 -> dados = dado;
+  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
 
+  mostra_protocolo(p1);
+  return p1;
+}
+
+void funcaoCD(linha_comando *entrada) {
+  estrutura_pacote *p = protocolo_cliente(entrada -> diretorio, CD, strlen(entrada->diretorio), 0);
 }
 
 void funcaoLCD(linha_comando *entrada) {
@@ -56,10 +49,12 @@ void le_comando( linha_comando *entrada) {
   strncpy(nome, dados,(strlen(dados)-1)); // retira o \0 do final da string, dá problema na comaparação do ls e lls
   quebra = strdup(strtok(dados," "));
   entrada->comando = quebra;
+  //printf("%s\n", entrada->comando );
   if(!strcmp(entrada->comando, "cd")){
      quebra =  strdup(strtok(NULL, ""));//<nome_dir>
      entrada-> diretorio = quebra;
-     //funcaoCD(entrada);   //efetua a troca de diretório - servidor
+
+     funcaoCD(entrada);   //efetua a troca de diretório - servidor
   }else if(!strcmp(quebra, "lcd")){
      quebra =  strdup(strtok(NULL, ""));//<nome_dir>
      entrada-> diretorio = quebra;
