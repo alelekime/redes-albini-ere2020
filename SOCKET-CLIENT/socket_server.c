@@ -1,11 +1,12 @@
 #include "funcoes.h"
 
-int ConexaoRawSocket(char *device)
+int socket_s(char *device)
 {
   int soquete = 0;
   struct ifreq ir;
   struct sockaddr_ll endereco;
   struct packet_mreq mr;
+    char *entrada_buffer, *dados, *maybe;
 
   soquete = socket(AF_PACKET, SOCK_RAW, 0);  	/*cria socket*/
   if (soquete == -1) {
@@ -16,6 +17,7 @@ int ConexaoRawSocket(char *device)
 
   memset(&ir, 0, sizeof(struct ifreq));  	/*dispositivo eth0*/
   memcpy(ir.ifr_name, "lo", sizeof("lo"));
+  printf("%s\n",ir.ifr_name );
   if (ioctl(soquete, SIOCGIFINDEX, &ir) == -1) {
     strerror (errno);
     perror("Erro no ioctl");

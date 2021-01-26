@@ -11,13 +11,27 @@ estrutura_pacote *protocolo_cliente(char *dado,int tipo, int tam, int seq) {
   p1 -> tipo = tipo;
   p1 -> dados = dado;
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
-
+  //printf("%d\n",strlen(p1 -> marcador )+ tam +strlen( p1 -> endereco_origem) +  strlen(p1 -> endereco_destino) + seq + tipo + strlen( p1 -> dados )+ p1 ->pariedade );
   mostra_protocolo(p1);
+  protocolo_string(p1, tipo,tam, seq);
   return p1;
 }
+char *protocolo_string(estrutura_pacote * p1, int tipo, int tam, int seq) {
+  char *string = (char*)malloc( sizeof(char)* 256);
+  snprintf(string,256,"%s %d %s %s %d %d %s %d",p1 -> marcador, tam, p1 -> endereco_origem, p1 -> endereco_destino, seq, tipo, p1 -> dados, p1 ->pariedade);
+  printf("%s\n",string );
+  return 0;
+}
+//
+// int envia_protocolo(estrutura_pacote * p, int socket) {
+//   if ((send (socket_confirmado, dados, 256, 0)) == -1) {
+// 		perror("send");
+//   return 0;
+// }
 
-void funcaoCD(linha_comando *entrada) {
+void funcaoCD(linha_comando *entrada, int socket) {
   estrutura_pacote *p = protocolo_cliente(entrada -> diretorio, CD, strlen(entrada->diretorio), 0);
+
 }
 
 void funcaoLCD(linha_comando *entrada) {
@@ -40,7 +54,7 @@ void imprime_path() {
 }
 
 
-void le_comando( linha_comando *entrada) {
+void le_comando( linha_comando *entrada, int socket) {
   char *entrada_buffer, *dados, *quebra, *nome ;
   nome = (char*)malloc(sizeof(char));
   __fpurge (stdin); // limpa buffer
@@ -53,8 +67,7 @@ void le_comando( linha_comando *entrada) {
   if(!strcmp(entrada->comando, "cd")){
      quebra =  strdup(strtok(NULL, ""));//<nome_dir>
      entrada-> diretorio = quebra;
-
-     funcaoCD(entrada);   //efetua a troca de diretório - servidor
+     funcaoCD(entrada, socket);   //efetua a troca de diretório - servidor
   }else if(!strcmp(quebra, "lcd")){
      quebra =  strdup(strtok(NULL, ""));//<nome_dir>
      entrada-> diretorio = quebra;

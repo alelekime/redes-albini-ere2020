@@ -16,7 +16,7 @@ int main(int argc, char const *argv[]) {
     printf("MODO CLIENTE ..\n");
     while(1){
       imprime_path();
-      le_comando(&entrada);
+      le_comando(&entrada, socket_confirmado);
 }
 
   }else if (!strcmp( argv[1], "servidor")){
