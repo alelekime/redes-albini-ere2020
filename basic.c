@@ -32,6 +32,30 @@ int cal_pariedade(int tam, int seq, int tipo, char *dado) {
   return binary;
 }
 
+void imprime_path() {
+  char* diretorio_atual;
+  char endereco[PATH_MAX +1];
+  diretorio_atual = getcwd(endereco, PATH_MAX + 1 );
+  printf( "%s$", diretorio_atual );
+}
+
+char * int2bin(unsigned i, int tam)
+{
+    size_t bits = tam;
+
+    char * str = malloc(bits + 1);
+    if(!str) return NULL;
+    str[bits] = 0;
+
+    // type punning because signed shift is implementation-defined
+    unsigned u = *(unsigned *)&i;
+    for(; bits--; u >>= 1)
+        str[bits] = u & 1 ? '1' : '0';
+
+    return str;
+}
+
+
 void lista_comandos_ajuda() {
   printf("-----------------------------------------------------------\n");
   printf(" * cd <nome_dir>\n");
