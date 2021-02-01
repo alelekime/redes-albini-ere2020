@@ -11,6 +11,7 @@
 #include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
+#include <math.h>
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -50,19 +51,21 @@ typedef struct estrutura_pacote {
   int pariedade;
 }estrutura_pacote;
 
+estrutura_pacote *protocolo_cliente(char *dado,int tipo, int tam, int seq);
+estrutura_pacote* abre_protocolo(char *entrada_server);
+char* recebe_protocolo(int socket) ;
 void lista_comandos_ajuda();
 int ConexaoRawSocket();
-void funcaoLCD(linha_comando *entrada);
-void funcaoLLS();
+void client_LLS();
 void imprime_path();
 void le_comando( linha_comando *entrada, int socket);
-estrutura_pacote *protocolo_cliente(char *dado,int tipo, int tam, int seq);
 int cal_pariedade(int tam, int seq, int tipo, char *dado);
 long decimalToBinary(int decimalnum);
 void mostra_protocolo(estrutura_pacote *pacote);
-void funcaoCD(linha_comando *entrada, int socket) ;
+void client_CD(linha_comando *entrada, int socket) ;
 char *protocolo_string(estrutura_pacote * p1) ;
-int recebe_protocolo(int socket) ;
-void funcaoLS(linha_comando *entrada, int socket) ;
-int abre_protocolo(char *entrada_server);
+void client_LS(linha_comando *entrada, int socket) ;
 char * int2bin(unsigned i, int tam);
+int convert(long long n);
+int envia_protocolo(char *string, int socket) ;
+void funcoes_server(int socket_confirmado);

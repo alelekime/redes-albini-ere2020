@@ -12,6 +12,18 @@ long decimalToBinary(int decimalnum){
     }
     return binarynum;
 }
+int convert(long long n) {
+    int dec = 0, i = 0, rem;
+    while (n != 0) {
+        rem = n % 10;
+        n /= 10;
+        dec += rem * pow(2, i);
+        ++i;
+    }
+    return dec;
+}
+
+
 
 int cal_pariedade(int tam, int seq, int tipo, char *dado) {
   int par = 0;

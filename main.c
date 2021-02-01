@@ -22,7 +22,7 @@ int main(int argc, char const *argv[]) {
   }else if (!strcmp( argv[1], "servidor")){
     socket_confirmado = ConexaoRawSocket();
     printf("MODO SERVIDOR ..\n");
-    recebe_protocolo(socket_confirmado);
+    funcoes_server(socket_confirmado);
   }
 
 }
