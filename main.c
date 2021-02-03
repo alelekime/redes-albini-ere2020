@@ -7,11 +7,12 @@ int main(int argc, char const *argv[]) {
   system ("clear");
 
 
-  lista_comandos_ajuda();
+
   if (argc == 1) {
     printf("nada\n");
       //lista_comandos_ajuda();
   }else if (!strcmp( argv[1], "cliente")) {
+    lista_comandos_ajuda();
     socket_confirmado = ConexaoRawSocket();
     printf("MODO CLIENTE ..\n");
     while(1){

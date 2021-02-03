@@ -16,7 +16,7 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-
+#include <sys/stat.h>
 
 #define ENTRADA_MAX 4096
 #define MARCA_INICIO 01111110
@@ -29,6 +29,8 @@
 #define EDIT 0101
 #define ACK 1000
 #define NACK 1001
+#define ERR 1111
+
 
 typedef struct linha_comando {
   char *comando;
@@ -51,7 +53,7 @@ typedef struct estrutura_pacote {
   int pariedade;
 }estrutura_pacote;
 
-estrutura_pacote *protocolo_cliente(char *dado,int tipo, int tam, int seq);
+estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq);
 estrutura_pacote* abre_protocolo(char *entrada_server);
 char* recebe_protocolo(int socket) ;
 void lista_comandos_ajuda();
@@ -69,3 +71,4 @@ char * int2bin(unsigned i, int tam);
 int convert(long long n);
 int envia_protocolo(char *string, int socket) ;
 void funcoes_server(int socket_confirmado);
+void server_CD(estrutura_pacote *p, int socket);
