@@ -5,31 +5,38 @@ void server_CD(estrutura_pacote *p, int socket) {
   struct stat fileStat;
 
   estrutura_pacote *p1;
-  // if ((mkdir(p -> dados, 0777)) == -1) {
-  //   p1 = protocolo("2", ERR, 0, 0);
-  //   string = protocolo_string(p1);
-  //   envia_protocolo(string, socket);
-  // } else
-   if ((fileStat.st_mode & S_IRUSR) || (fileStat.st_mode & S_IRGRP) || (fileStat.st_mode & S_IROTH)){ // verifica se existe permissão para abrir o diretório
-    printf("FAZENDO CD\n");
-    if(!strcmp(p->dados, "..")){
-      chdir("..");
-  } else{
-      printf("%s\n", p->dados);
-      chdir(p->dados);
-    }
-    p1 = protocolo(" ", ACK, 0, 0);
+
+  if (chdir(p->dados) == 0) {
+    printf("dd\n");
+    p1 = protocolo_server("", ACK, 0, 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
     imprime_path();
-  } else{ // caso de não ter permissão
-    printf("NÃO TEM PERMISSÃO\n" );
-    p1 = protocolo("1", ERR, strlen("1"), 0);
+  } else {
+    p1 = protocolo_server("2", 15, sizeof("2"), 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
+    printf("saindo %s\n", string);
   }
 }
 
+void server_VER(estrutura_pacote *p, int socket) {
+  /* code */
+}
+
+void server_LS(estrutura_pacote *p, int socket) {
+//   struct dirent *pDirent;
+//   char* cwd;
+//   getcwd(cwd, 1024);
+//   printf("%s\n",cwd );
+//   DIR *pDir;
+//   pDir = opendir (cwd);
+//   while ((pDirent = readdir(pDir)) != NULL) {
+//             printf ("[%s]\n", pDirent->d_name);
+//   }
+// //  printf("%s\n",ls );
+
+}
 
 void funcoes_server(int socket_confirmado) {
 
@@ -46,9 +53,11 @@ void funcoes_server(int socket_confirmado) {
           server_CD(p, socket_confirmado);
           break;
         case 1:       //LS
+          server_LS(p, socket_confirmado);
           printf("ls\n");
           break;
         case 10:      //VER
+          server_VER(p, socket_confirmado);
           break;
         case 11:      // LINHA
           break;

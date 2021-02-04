@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <dirent.h>
 #include <errno.h>
 #include <stdlib.h>
 #include <stdbool.h>
@@ -72,3 +73,6 @@ int convert(long long n);
 int envia_protocolo(char *string, int socket) ;
 void funcoes_server(int socket_confirmado);
 void server_CD(estrutura_pacote *p, int socket);
+void server_LS(estrutura_pacote *p, int socket) ;
+estrutura_pacote *protocolo_server(char *dado,int tipo, int tam, int seq);
+void server_VER(estrutura_pacote *p, int socket);

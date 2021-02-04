@@ -21,13 +21,27 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
         p1 -> tamanho = tam -1 ;
       }
   }
-
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
   printf("%d\n",p1 -> tipo );
-  //printf("%d\n",strlen(p1 -> marcador )+ tam +strlen( p1 -> endereco_origem) +  strlen(p1 -> endereco_destino) + seq + tipo + strlen( p1 -> dados )+ p1 ->pariedade );
-  mostra_protocolo(p1);
   return p1;
 }
+
+estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
+  estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
+  printf("%d\n",convert( tipo ));
+  p1 -> marcador = "01111110";
+  p1 -> tamanho = convert(tam);
+  p1 -> endereco_origem = "01";
+  p1 -> endereco_destino ="10";
+  p1 -> sequencia = seq;
+  p1 -> tipo = convert(tipo);
+  p1-> dados = dado;
+  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
+  mostra_protocolo(p1);
+  printf(" tipo server %d\n",p1-> tipo );
+  return p1;
+}
+
 char *protocolo_string(estrutura_pacote * p1) {
   char *string = (char*)malloc( sizeof(char)* 256);
   snprintf(string,256,"%s%s%s%s%s%s%s%s", p1 -> marcador, int2bin(p1 -> tamanho, 4), p1 -> endereco_origem, p1 -> endereco_destino, int2bin(p1-> sequencia, 4), int2bin(p1-> tipo, 4), p1 -> dados, int2bin(p1 -> pariedade, 8));
@@ -116,7 +130,7 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *entrada_server++;
   }
   p -> tipo = convert(soma);
-  printf(" tipo %d\n", p-> tipo);
+  printf(" tipo %s\n", int2bin(p-> tipo, 4));
   soma = 0;
   for (int i = 0; i < p-> tamanho; i++) {
     *dados1 = *entrada_server;
@@ -140,18 +154,21 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
 
 void client_CD(linha_comando *entrada, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
-  char *string1 = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1 = protocolo(entrada -> diretorio, CD, strlen(entrada->diretorio), 0);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
-  string = recebe_protocolo(socket);
-  printf("1 -%s\n", string);
-  p1 = abre_protocolo(string);
+  while (1){
+    string = recebe_protocolo(socket);
+    p1 = abre_protocolo(string);
+    printf("%s\n",string);
+    if(!strcmp(p1-> endereco_origem, "01"))
+      break;
+  }
   if (p1 -> tipo == 8) {
     printf("\nACK\n");
   }if (p1 -> tipo == 9) {
     printf("\nNACK\n");
-  } else if (p1 -> tipo == 15) {
+  } else if (p1 -> tipo == 7) {
     printf("\nERRO ENCONTRADO\n");
     printf("%s\n",p1-> dados);
   }
