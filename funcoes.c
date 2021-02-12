@@ -7,6 +7,7 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
   char *novo = (char*)malloc(sizeof(char) * 15);
   strncpy(novo, dado,(strlen(dado)-1)); // retira o \0 do final da string
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
+  printf("here\n");
   p1 -> marcador = "01111110";
   p1 -> tamanho = convert(tam);
   p1 -> endereco_origem = "10";
@@ -22,13 +23,11 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
       }
   }
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
-  printf("%d\n",p1 -> tipo );
   return p1;
 }
 
 estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
-  printf("%d\n",convert( tipo ));
   p1 -> marcador = "01111110";
   p1 -> tamanho = convert(tam);
   p1 -> endereco_origem = "01";
@@ -37,23 +36,25 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
   p1 -> tipo = convert(tipo);
   p1-> dados = dado;
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
-  mostra_protocolo(p1);
-  printf(" tipo server %d\n",p1-> tipo );
+//  mostra_protocolo(p1);
+
   return p1;
 }
 
 char *protocolo_string(estrutura_pacote * p1) {
   char *string = (char*)malloc( sizeof(char)* 256);
   snprintf(string,256,"%s%s%s%s%s%s%s%s", p1 -> marcador, int2bin(p1 -> tamanho, 4), p1 -> endereco_origem, p1 -> endereco_destino, int2bin(p1-> sequencia, 4), int2bin(p1-> tipo, 4), p1 -> dados, int2bin(p1 -> pariedade, 8));
-  printf("%s\n",string );
+  //printf("%s\n",string );
   return string;
 }
 
 int envia_protocolo(char *string, int socket) {
-  printf("ENVIANDO PACOTE\n");
-  if ((send (socket, string, 256, 0)) == -1) {
-		perror("send");
-}
+//  printf("ENVIANDO PACOTE\n");
+  if (strlen(string) > 5) {
+    if ((send (socket, string, 256, 0)) == -1) {
+  		perror("send");
+    }
+  }
   return 0;
 }
 
@@ -118,7 +119,7 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *entrada_server++;
   }
   p -> sequencia = convert(soma);
-  printf(" sequencia %d\n", p-> sequencia);
+  //printf(" sequencia %d\n", p-> sequencia);
   soma = 0;
   aux1 = 1000;
   for (int i = 0; i < 4; i++) {
@@ -130,7 +131,10 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *entrada_server++;
   }
   p -> tipo = convert(soma);
-  printf(" tipo %s\n", int2bin(p-> tipo, 4));
+
+  // printf(" tipo %s\n", int2bin(p-> tipo, 4));
+  // printf(" tipo %d\n", p-> tipo);
+
   soma = 0;
   for (int i = 0; i < p-> tamanho; i++) {
     *dados1 = *entrada_server;
@@ -159,14 +163,16 @@ void client_CD(linha_comando *entrada, int socket) {
   envia_protocolo(string, socket);
   while (1){
     string = recebe_protocolo(socket);
-    p1 = abre_protocolo(string);
-    printf("%s\n",string);
-    if(!strcmp(p1-> endereco_origem, "01"))
-      break;
+    if (strlen(string) > 5) {
+      p1 = abre_protocolo(string);
+      printf("%s\n",string);
+      if(!strcmp(p1-> endereco_origem, "01"))
+        break;
+    }
   }
   if (p1 -> tipo == 8) {
     printf("\nACK\n");
-  }if (p1 -> tipo == 9) {
+  }else if (p1 -> tipo == 9) {
     printf("\nNACK\n");
   } else if (p1 -> tipo == 7) {
     printf("\nERRO ENCONTRADO\n");
@@ -174,11 +180,42 @@ void client_CD(linha_comando *entrada, int socket) {
   }
 }
 
+bool recebe_ls(estrutura_pacote * p1, int socket) {
+  char *string = (char*)malloc( sizeof(char)* 256);
+  estrutura_pacote * p;
+  string = recebe_protocolo(socket);
+
+  if (strlen(string) > 5){
+    p1 = abre_protocolo(string);
+
+    if (p1-> tipo == 11) {
+      //printf("%s\n",string);
+      printf("%s\n", p1->dados);
+      p = protocolo_server("", ACK, strlen(""), 0);
+      //printf("%s\n",string);
+      string = protocolo_string(p);
+      //printf("ENVIANDO\n" );
+      envia_protocolo(string, socket);
+      return true;
+
+    }else if (p1-> tipo == 13){
+      printf("Fim da transmissao\n");
+      return false;
+    }
+  } else {
+        printf("Erro não é conteudo do ls \n");
+        return false;
+    }
+}
+
 void client_LS(linha_comando *entrada, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1 = protocolo("ls", LS, strlen("ls"), 0);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
+  printf("CONTEÚDO DO LS\n");
+  while (recebe_ls(p1,socket));
+
 }
 
 void client_LCD(linha_comando *entrada) {

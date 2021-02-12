@@ -13,7 +13,7 @@ void server_CD(estrutura_pacote *p, int socket) {
     envia_protocolo(string, socket);
     imprime_path();
   } else {
-    p1 = protocolo_server("2", 15, sizeof("2"), 0);
+    p1 = protocolo_server("2", 15, strlen("2"), 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
     printf("saindo %s\n", string);
@@ -24,17 +24,32 @@ void server_VER(estrutura_pacote *p, int socket) {
   /* code */
 }
 
-void server_LS(estrutura_pacote *p, int socket) {
-//   struct dirent *pDirent;
-//   char* cwd;
-//   getcwd(cwd, 1024);
-//   printf("%s\n",cwd );
-//   DIR *pDir;
-//   pDir = opendir (cwd);
-//   while ((pDirent = readdir(pDir)) != NULL) {
-//             printf ("[%s]\n", pDirent->d_name);
-//   }
-// //  printf("%s\n",ls );
+int server_LS(estrutura_pacote *p, int socket) {
+    int cont =0;
+    char *string = (char*)malloc( sizeof(char)* 256);
+    estrutura_pacote *p1;
+    struct dirent *de;
+    DIR *dr = opendir(".");
+
+    if (dr == NULL)
+        printf("ERRO" );
+
+    else
+      while ((de = readdir(dr)) != NULL){
+        printf("%s\n", de->d_name);
+        p1 = protocolo_server(de->d_name, 1011, strlen(de->d_name), cont);
+        string = protocolo_string(p1);
+        envia_protocolo(string, socket);
+        string = recebe_protocolo(socket);
+      //  p1 = abre_protocolo(entrada_server);
+        cont++;
+      }
+      p1 = protocolo_server("", 1101, 0, cont);
+      string = protocolo_string(p1);
+      envia_protocolo(string, socket);
+
+    closedir(dr);
+    return 0;
 
 }
 
@@ -44,7 +59,7 @@ void funcoes_server(int socket_confirmado) {
   while (1) {
 
     entrada_server = recebe_protocolo(socket_confirmado);
-    if (strlen(entrada_server) > 0) {
+    if (strlen(entrada_server) > 5) {
       imprime_path();
       printf(" PACOTE RECEBIDO = %s\n",entrada_server );
       estrutura_pacote *p = abre_protocolo(entrada_server);
