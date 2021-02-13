@@ -68,6 +68,12 @@ int split_string(char *string,int cont, int tam, int socket) {
     envia_protocolo(ultima_mensagem, socket);
   }
   cont++;
+  p1 = protocolo_server("\n", 11, strlen("\n"), cont);
+  ultima_mensagem = protocolo_string(p1);
+  printf( "ultima %s\n", ultima_mensagem);
+  envia_protocolo(ultima_mensagem, socket);
+  recebe = recebe_protocolo(socket);
+  cont++;
 
   return cont;
 }
@@ -88,13 +94,13 @@ int server_LS(estrutura_pacote *p, int socket) {
       while ((de = readdir(dr)) != NULL){
         printf("%s\n", de->d_name);
         tam = strlen(de->d_name);
-        printf( "tam = %d\n",tam );
+      //  printf( "tam = %d\n",tam );
         if (tam > 15) {
           cont = split_string(de->d_name,cont, tam, socket);
         } else {
           p1 = protocolo_server(de->d_name, 11, tam, cont);
           ultima = protocolo_string(p1);
-          printf("%s\n", ultima);
+          //printf("menor %s %d\n", ultima,tam);
           envia_protocolo(ultima, socket);
           string = recebe_protocolo(socket);
           //printf( "chegando %s\n",string);
@@ -105,6 +111,11 @@ int server_LS(estrutura_pacote *p, int socket) {
           }else if (p2->tipo == 9) {
             envia_protocolo(ultima, socket);
           }
+          p1 = protocolo_server("\n", 11, strlen("\n"), cont);
+          ultima = protocolo_string(p1);
+          printf( "ultima %s\n", ultima);
+          envia_protocolo(ultima, socket);
+          ultima = recebe_protocolo(socket);
         }
       }
       p1 = protocolo_server("", 1101, 0, cont);

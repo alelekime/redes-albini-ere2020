@@ -82,3 +82,4 @@ bool recebe_ls(estrutura_pacote * p1, int socket);
 int split_string(char *string,int cont, int tam, int socket);
 //char *protocolo_string_server(estrutura_pacote * p1);//
 int acha_binario(int tam) ;
+char * convert_binary(int dec, char *output);

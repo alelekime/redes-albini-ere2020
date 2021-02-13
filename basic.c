@@ -101,8 +101,27 @@ void imprime_path() {
   printf( "%s$", diretorio_atual );
 }
 
-char * int2bin(unsigned i, int tam)
-{
+char * convert_binary(int dec, char *output) {
+    if (dec ==11 ) {
+      strcpy(output, "0011");
+    } else if (dec == 111) {
+      strcpy(output, "0111");
+    }else if (dec == 1111) {
+      strcpy(output, "1111");
+    }else if (dec == 10) {
+      strcpy(output, "0010");
+    }else if (dec == 110) {
+      strcpy(output, "0110");
+    }else {
+      output[3] = (dec & 1) + '0';
+      output[2] = ((dec >> 1) & 1) + '0';
+      output[1] = ((dec >> 2) & 1) + '0';
+      output[0] = ((dec >> 3) & 1) + '0';
+    }
+    return output;
+}
+
+char * int2bin(unsigned i, int tam){
     size_t bits = tam;
 
     char * str = malloc(bits + 1);
@@ -111,9 +130,10 @@ char * int2bin(unsigned i, int tam)
 
     // type punning because signed shift is implementation-defined
     unsigned u = *(unsigned *)&i;
-    for(; bits--; u >>= 1)
+    for(; bits--; u >>= 1){
         str[bits] = u & 1 ? '1' : '0';
-
+        //printf(".%c\n", str[bits]);
+}
     return str;
 }
 
