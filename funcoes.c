@@ -9,7 +9,7 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
   printf("here\n");
   p1 -> marcador = "01111110";
-  p1 -> tamanho = convert(tam);
+  p1 -> tamanho = acha_binario(tam);
   p1 -> endereco_origem = "10";
   p1 -> endereco_destino ="01";
   p1 -> sequencia = seq;
@@ -29,11 +29,13 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
 estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
   p1 -> marcador = "01111110";
-  p1 -> tamanho = convert(tam);
+  p1 -> tamanho = acha_binario(tam);
+  printf("%d\n", p1->tamanho);
   p1 -> endereco_origem = "01";
   p1 -> endereco_destino ="10";
   p1 -> sequencia = seq;
-  p1 -> tipo = convert(tipo);
+  p1 -> tipo = tipo;
+  printf("erro %s\n", int2bin(p1-> tipo, 4));
   p1-> dados = dado;
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
 //  mostra_protocolo(p1);
@@ -44,7 +46,7 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
 char *protocolo_string(estrutura_pacote * p1) {
   char *string = (char*)malloc( sizeof(char)* 256);
   snprintf(string,256,"%s%s%s%s%s%s%s%s", p1 -> marcador, int2bin(p1 -> tamanho, 4), p1 -> endereco_origem, p1 -> endereco_destino, int2bin(p1-> sequencia, 4), int2bin(p1-> tipo, 4), p1 -> dados, int2bin(p1 -> pariedade, 8));
-  //printf("%s\n",string );
+  printf("%s\n",string );
   return string;
 }
 
@@ -90,6 +92,7 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *entrada_server++;
   }
   p -> tamanho = convert(soma);
+    printf("%d\n",  p -> tamanho );
   soma = 0;
   aux1 = 1000;
   for (int i = 0; i < 4; i++) {
@@ -141,7 +144,9 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *dados1++;
     *entrada_server++;
   }
-  p-> dados = pont;
+  p-> dados = strdup(pont);
+
+  //printf( "dentro = %s\n", p->dados);
   soma = 0;
   aux1 = 10000000;
   for (int i = 0; i < 8; i++) {
@@ -154,6 +159,9 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
   }
   p -> pariedade = soma;
   return p;
+}
+void client_VER(linha_comando *entrada, int socket) {
+
 }
 
 void client_CD(linha_comando *entrada, int socket) {
@@ -174,8 +182,9 @@ void client_CD(linha_comando *entrada, int socket) {
     printf("\nACK\n");
   }else if (p1 -> tipo == 9) {
     printf("\nNACK\n");
-  } else if (p1 -> tipo == 7) {
-    printf("\nERRO ENCONTRADO\n");
+  } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
+    printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
+
     printf("%s\n",p1-> dados);
   }
 }
@@ -184,28 +193,26 @@ bool recebe_ls(estrutura_pacote * p1, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote * p;
   string = recebe_protocolo(socket);
-
+  //printf("%s\n", string);
   if (strlen(string) > 5){
     p1 = abre_protocolo(string);
-
     if (p1-> tipo == 11) {
       //printf("%s\n",string);
       printf("%s\n", p1->dados);
       p = protocolo_server("", ACK, strlen(""), 0);
-      //printf("%s\n",string);
+      printf("%s\n",string);
       string = protocolo_string(p);
       //printf("ENVIANDO\n" );
       envia_protocolo(string, socket);
       return true;
-
     }else if (p1-> tipo == 13){
       printf("Fim da transmissao\n");
       return false;
-    }
-  } else {
+    }else {
         printf("Erro não é conteudo do ls \n");
         return false;
     }
+  }
 }
 
 void client_LS(linha_comando *entrada, int socket) {
@@ -255,7 +262,7 @@ void le_comando( linha_comando *entrada, int socket) {
   }else if(!strcmp(quebra, "ver")){
      quebra =  strdup(strtok(NULL, ""));//<nome_arq>
      entrada-> nome_arq = quebra;
-   //client_VER(); //mostra o arquivo com as linhas numeradas
+     client_VER(entrada, socket); //mostra o arquivo com as linhas numeradas
   }else if(!strcmp(quebra, "linha")){
     entrada -> linha =  atoi(strdup(strtok(NULL, " ")));//<numero_linha>
     quebra =  strdup(strtok(NULL, ""));//<nome_arq>

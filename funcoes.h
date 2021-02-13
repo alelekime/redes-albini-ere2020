@@ -77,4 +77,8 @@ void server_CD(estrutura_pacote *p, int socket);
 int server_LS(estrutura_pacote *p, int socket) ;
 estrutura_pacote *protocolo_server(char *dado,int tipo, int tam, int seq);
 void server_VER(estrutura_pacote *p, int socket);
+void client_VER(linha_comando *entrada, int socket);
 bool recebe_ls(estrutura_pacote * p1, int socket);
+int split_string(char *string,int cont, int tam, int socket);
+//char *protocolo_string_server(estrutura_pacote * p1);//
+int acha_binario(int tam) ;
