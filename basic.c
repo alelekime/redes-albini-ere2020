@@ -23,7 +23,57 @@ int convert(long long n) {
     return dec;
 }
 
+int acha_binario(int tam) {
+  switch (tam) {
+    case 1:
+    tam = 1;
+    break;
+    case 2:
+    tam = 10;
+    break;
+    case 3:
+    tam = 11;
+    break;
+    case 4:
+    tam = 100;
+    break;
+    case 5:
+    tam = 101;
+    break;
+    case 6:
+    tam = 110;
+    break;
+    case 7:
+    tam = 111;
+    break;
+    case 8:
+    tam = 1000;
+    break;
+    case 9:
+    tam = 1001;
+    break;
+    case 10:
+    tam = 1010;
+    break;
+    case 11:
+    tam = 1011;
+    break;
+    case 12:
+    tam = 1100;
+    break;
+    case 13:
+    tam = 1101;
+    break;
+    case 14:
+    tam = 1110;
+    break;
+    case 15:
+    tam = 1111;
+    break;
 
+  }
+  return tam;
+}
 
 int cal_pariedade(int tam, int seq, int tipo, char *dado) {
   int par = 0;
