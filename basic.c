@@ -112,6 +112,12 @@ char * convert_binary(int dec, char *output) {
       strcpy(output, "0010");
     }else if (dec == 110) {
       strcpy(output, "0110");
+    }else if (dec == 1110) {
+      strcpy(output, "1110");
+    }else if (dec == 1011) {
+      strcpy(output, "1011");
+    }else if (dec == 1010) {
+      strcpy(output, "1010");
     }else {
       output[3] = (dec & 1) + '0';
       output[2] = ((dec >> 1) & 1) + '0';

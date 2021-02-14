@@ -37,10 +37,10 @@ int split_string(char *string,int cont, int tam, int socket) {
   while (tam > 15) {
     strncpy(quebra, string, 15);
     tam2= strlen(quebra);
-    printf(" while %s %d\n ", quebra,tam2);
+    printf(" DADO DENTRO DO WHILE  %s %d\n ", quebra,tam2);
     p1 = protocolo_server(quebra, 11, tam2, cont);
     ultima_mensagem = protocolo_string(p1);
-    printf("%s\n", ultima_mensagem);
+    printf(" MESANGEM INDO PARA O CLIENTE%s\n", ultima_mensagem);
     envia_protocolo(ultima_mensagem, socket);
     recebe = recebe_protocolo(socket);
     //printf( "chegando %s\n",string);
@@ -57,7 +57,7 @@ int split_string(char *string,int cont, int tam, int socket) {
 
   p1 = protocolo_server(string, 11, strlen(string), cont);
   ultima_mensagem = protocolo_string(p1);
-  printf( "ultima %s\n", ultima_mensagem);
+  printf( "SAIU DO WHILE, FINAL DO DADO  %s\n", ultima_mensagem);
   envia_protocolo(ultima_mensagem, socket);
   recebe = recebe_protocolo(socket);
   //printf( "chegando %s\n",string);
@@ -68,7 +68,7 @@ int split_string(char *string,int cont, int tam, int socket) {
     envia_protocolo(ultima_mensagem, socket);
   }
   cont++;
-  p1 = protocolo_server("\n", 11, strlen("\n"), cont);
+  p1 = protocolo_server("  ", 11, strlen("  "), cont);
   ultima_mensagem = protocolo_string(p1);
   printf( "ultima %s\n", ultima_mensagem);
   envia_protocolo(ultima_mensagem, socket);
@@ -83,6 +83,7 @@ int server_LS(estrutura_pacote *p, int socket) {
   char *ultima = (char*)malloc( sizeof(char)* 256);
     int cont = 0;
     int tam = 0;
+    int enter = 0;
     estrutura_pacote *p1, *p2;
     struct dirent *de;
     DIR *dr = opendir(".");
@@ -92,15 +93,17 @@ int server_LS(estrutura_pacote *p, int socket) {
 
     else
       while ((de = readdir(dr)) != NULL){
+        enter++;
+        printf("\n");
         printf("%s\n", de->d_name);
         tam = strlen(de->d_name);
-      //  printf( "tam = %d\n",tam );
+        printf( "TAMANHO DO DADO %d\n",tam );
         if (tam > 15) {
           cont = split_string(de->d_name,cont, tam, socket);
         } else {
           p1 = protocolo_server(de->d_name, 11, tam, cont);
           ultima = protocolo_string(p1);
-          //printf("menor %s %d\n", ultima,tam);
+          printf("STRING MENOR QUE 15 %s %d\n", ultima,tam);
           envia_protocolo(ultima, socket);
           string = recebe_protocolo(socket);
           //printf( "chegando %s\n",string);
@@ -111,9 +114,14 @@ int server_LS(estrutura_pacote *p, int socket) {
           }else if (p2->tipo == 9) {
             envia_protocolo(ultima, socket);
           }
-          p1 = protocolo_server("\n", 11, strlen("\n"), cont);
+          if (enter == 5) {
+            p1 = protocolo_server("\n", 11, strlen("\n"), cont);
+            enter = 0;
+          } else {
+            p1 = protocolo_server("  ", 11, strlen("  "), cont);
+          }
           ultima = protocolo_string(p1);
-          printf( "ultima %s\n", ultima);
+          printf( "ACABOU A TRANSMISSAO %s\n", ultima);
           envia_protocolo(ultima, socket);
           ultima = recebe_protocolo(socket);
         }
@@ -122,7 +130,7 @@ int server_LS(estrutura_pacote *p, int socket) {
       string = protocolo_string(p1);
       envia_protocolo(string, socket);
 
-    closedir(dr);
+    //closedir(dr);
     return 0;
 
 }

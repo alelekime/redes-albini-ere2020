@@ -33,7 +33,7 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
 
   p1 -> marcador = "01111110";
   p1 -> tamanho = acha_binario(tam);
-//  printf("tam server %d\n", p1->tamanho);
+//  printf("TAMANHO DO DADO DE POIS DA FUNCAO ACHA BINARIO %d\n", p1->tamanho);
   p1 -> endereco_origem = "01";
   p1 -> endereco_destino ="10";
   p1 -> sequencia = seq;
@@ -42,14 +42,16 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
   p1-> dados = dado;
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
 //  mostra_protocolo(p1);
-//printf("binary %s\n",  convert_binary(p1 -> tamanho, binary));
+  //printf("TAMANHO DO DADO NA FUNCAO CONVERT BINARIO %s\n",  convert_binary(p1 -> tamanho, binary));
   return p1;
 }
 
 char *protocolo_string(estrutura_pacote * p1) {
   char *string = (char*)malloc( sizeof(char)* 256);
   char *binary = (char*)malloc( sizeof(char)* 4);
-  snprintf(string,256,"%s%s%s%s%s%s%s%s", p1 -> marcador,  p1 -> endereco_origem, p1 -> endereco_destino,convert_binary(p1 -> tamanho, binary), int2bin(p1-> sequencia, 4), int2bin(p1-> tipo, 4), p1 -> dados, int2bin(p1 -> pariedade, 8));
+
+  snprintf(string,256,"%s%s%s%s%s%s%s%s", p1 -> marcador,  p1 -> endereco_origem, p1 -> endereco_destino, convert_binary(p1 -> tamanho, binary), int2bin(p1-> sequencia, 4), int2bin(p1-> tipo, 4), p1 -> dados, int2bin(p1 -> pariedade, 8));
+
 //  printf(" string %s\n",string );
   return string;
 }
@@ -170,7 +172,14 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
 
 void client_VER(linha_comando *entrada, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
-  estrutura_pacote *p1 = protocolo(entrada -> diretorio, CD, strlen(entrada->diretorio), 0);
+  estrutura_pacote *p1;
+  if (entrada-> nome_arq == NULL) {
+    printf("ARQUIVO INVALIDO\n");
+    return;
+  }
+
+  p1 = protocolo(entrada -> nome_arq, VER, strlen(entrada-> nome_arq), 0);
+  printf("%s\n",string);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
   while (1){
