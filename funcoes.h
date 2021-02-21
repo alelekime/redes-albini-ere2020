@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <unistd.h>
+#include <poll.h>
 #include <dirent.h>
 #include <errno.h>
 #include <stdlib.h>
@@ -24,7 +25,7 @@
 #define PATH_MAX 4096
 #define CD 0000
 #define LS 0001
-#define VER 0010
+#define VER 10
 #define LINHA 0011
 #define LINHAS 0100
 #define EDIT 0101

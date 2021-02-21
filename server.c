@@ -24,7 +24,45 @@ void server_CD(estrutura_pacote *p, int socket) {
 }
 
 void server_VER(estrutura_pacote *p, int socket) {
-  /* code */
+  estrutura_pacote *p1, *p2;
+  int seq = 0;
+  char *caracters = (char*)malloc(sizeof(char)*15);
+  char *string = (char*)malloc( sizeof(char)* 256);
+  char *entrada = (char*)malloc( sizeof(char)* 256);
+  FILE *arquivo;
+  printf("%s\n",p->dados);
+  arquivo = fopen (p->dados,"r");
+  if (arquivo != NULL) {
+    while (1) {
+      if (!fread(caracters, sizeof(char), 15, arquivo)) {
+        break;
+      }
+      p1 = protocolo_server(caracters, 12, strlen(caracters), seq);
+      string = protocolo_string(p1);
+      printf("%s\n", string);
+      printf("%d\n",seq );
+      envia_protocolo(string, socket);
+      entrada = recebe_protocolo(socket);
+      printf("%s\n", entrada);
+      p2 = abre_protocolo(entrada);
+      printf("%d\n", p2->tipo);
+      if (p1-> tipo == 15) {
+        printf("ERRO, REENVIANDO\n");
+        envia_protocolo(string, socket);
+      }else{
+        printf("ACK DO CLIENTE\n");
+      }
+      seq++;
+    }
+    p1 = protocolo_server("", 13, 0, seq);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+  }else{
+    printf("erro arq\n");
+    p1 = protocolo_server("3", 15, strlen("3"), 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+  }
 }
 
 int split_string(char *string,int cont, int tam, int socket) {
@@ -145,6 +183,7 @@ void funcoes_server(int socket_confirmado) {
       imprime_path();
       printf(" PACOTE RECEBIDO = %s\n",entrada_server );
       estrutura_pacote *p = abre_protocolo(entrada_server);
+      printf("%d\n", p-> tipo);
       switch (p -> tipo) {
         case 0:       //CD
           server_CD(p, socket_confirmado);
@@ -153,7 +192,8 @@ void funcoes_server(int socket_confirmado) {
           server_LS(p, socket_confirmado);
           printf("ls\n");
           break;
-        case 10:      //VER
+        case 2:      //VER
+          printf("VER\n");
           server_VER(p, socket_confirmado);
           break;
         case 11:      // LINHA

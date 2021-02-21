@@ -24,6 +24,7 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
   }
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
   //  mostra_protocolo(p1);
+  printf("%d\n", p1-> tipo );
   return p1;
 }
 
@@ -171,34 +172,57 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
 }
 
 void client_VER(linha_comando *entrada, int socket) {
+  struct pollfd fds[1];
+  int linha = 2;
+  int time;
   char *string = (char*)malloc( sizeof(char)* 256);
-  estrutura_pacote *p1;
-  if (entrada-> nome_arq == NULL) {
-    printf("ARQUIVO INVALIDO\n");
-    return;
-  }
-
-  p1 = protocolo(entrada -> nome_arq, VER, strlen(entrada-> nome_arq), 0);
-  printf("%s\n",string);
+  char *caracter = (char*)malloc(sizeof(char) );
+  char *saida = (char*)malloc( sizeof(char)* 256);
+  estrutura_pacote *p1, *p;
+  p1 = protocolo(entrada -> nome_arq,2, strlen(entrada-> nome_arq), 0);
   string = protocolo_string(p1);
+  printf("%s\n",string);
   envia_protocolo(string, socket);
+  printf("1 ");
   while (1){
-    string = recebe_protocolo(socket);
-    if (strlen(string) > 5) {
-      p1 = abre_protocolo(string);
-      printf("%s\n",string);
-      if(!strcmp(p1-> endereco_origem, "01"))
-        break;
-    }
-  }
-  if (p1 -> tipo == 8) {
-    printf("\nACK\n");
-  }else if (p1 -> tipo == 9) {
-    printf("\nNACK\n");
-  } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
-    printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
+    fds[0].fd = socket;
+    fds[0].events = 0;
+    fds[0].events |= POLLIN;
+    time = poll(fds, 1, 3500);
+    if (time == 0){
+      printf("TIMEOUT!\n");
+      break;
+    }else {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5) {
+        p1 = abre_protocolo(string);
+        //printf("%d\n", p1->tipo);
+        p = protocolo_server("", 8, 0, 0);
+        saida = protocolo_string(p);
+        //envia_protocolo(saida, socket);
 
-    printf("%s\n",p1-> dados);
+        if (p1 -> tipo == 15 && !(strcmp(p1->dados, "3")) ) {
+          printf("ERRO = %s\n",p1-> dados);
+          printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE ARQUIVO\n", entrada-> nome_arq);
+          break;
+        }else if (p1-> tipo == 13){
+          printf("\nFim da transmissao\n");
+          break;
+        }else{
+          for (size_t i = 0; i < 15; i++) {
+            strncpy(caracter, p1-> dados, 1);
+              if (!strcmp(caracter, "\n")) {
+                printf("%c%d ",*p1-> dados, linha);
+                linha++;
+              } else {
+                  printf("%c",*p1-> dados);
+              }
+            *p1->dados++;
+          }
+        }
+      }
+    }
+
   }
 }
 
@@ -231,7 +255,7 @@ bool recebe_ls(estrutura_pacote * p1, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote * p;
   string = recebe_protocolo(socket);
-  //printf("%s\n", string);
+//  printf("%s\n", string);
   if (strlen(string) > 5){
     p1 = abre_protocolo(string);
     //mostra_protocolo(p1);
