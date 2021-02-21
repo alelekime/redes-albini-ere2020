@@ -25,7 +25,11 @@ void server_CD(estrutura_pacote *p, int socket) {
 
 void server_VER(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
+  int fd = 0;
+  struct pollfd fds[1];
+
   int seq = 0;
+  int time ;
   char *caracters = (char*)malloc(sizeof(char)*15);
   char *string = (char*)malloc( sizeof(char)* 256);
   char *entrada = (char*)malloc( sizeof(char)* 256);
@@ -34,6 +38,9 @@ void server_VER(estrutura_pacote *p, int socket) {
   arquivo = fopen (p->dados,"r");
   if (arquivo != NULL) {
     while (1) {
+      fds[0].fd = socket;
+      fds[0].events = 0;
+    	fds[0].events |= POLLIN;
       if (!fread(caracters, sizeof(char), 15, arquivo)) {
         break;
       }
@@ -42,17 +49,24 @@ void server_VER(estrutura_pacote *p, int socket) {
       printf("%s\n", string);
       printf("%d\n",seq );
       envia_protocolo(string, socket);
-      entrada = recebe_protocolo(socket);
-      printf("%s\n", entrada);
-      p2 = abre_protocolo(entrada);
-      printf("%d\n", p2->tipo);
-      if (p1-> tipo == 15) {
-        printf("ERRO, REENVIANDO\n");
-        envia_protocolo(string, socket);
-      }else{
-        printf("ACK DO CLIENTE\n");
+      time = poll(fds, 1, 3500);
+      if (time == 0){
+        printf("TIMEOUT!\n");
+        break;
       }
-      seq++;
+       else  {
+            entrada = recebe_protocolo(socket);
+            printf("%s\n", entrada);
+            p2 = abre_protocolo(entrada);
+            printf("%d\n", p2->tipo);
+            if (p1-> tipo == 15) {
+              printf("ERRO, REENVIANDO\n");
+              envia_protocolo(string, socket);
+            }else{
+              printf("ACK DO CLIENTE\n");
+            }
+            seq++;
+        }
     }
     p1 = protocolo_server("", 13, 0, seq);
     string = protocolo_string(p1);
@@ -119,30 +133,43 @@ int split_string(char *string,int cont, int tam, int socket) {
 int server_LS(estrutura_pacote *p, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
   char *ultima = (char*)malloc( sizeof(char)* 256);
-    int cont = 0;
-    int tam = 0;
-    int enter = 0;
-    estrutura_pacote *p1, *p2;
-    struct dirent *de;
-    DIR *dr = opendir(".");
+  struct pollfd fds[1];
+  int time;
+  int cont = 0;
+  int tam = 0;
+  int enter = 0;
+  estrutura_pacote *p1, *p2;
+  struct dirent *de;
+  DIR *dr = opendir(".");
 
-    if (dr == NULL)
-        printf("ERRO" );
+  if (dr == NULL)
+      printf("ERRO" );
 
-    else
-      while ((de = readdir(dr)) != NULL){
-        enter++;
-        printf("\n");
-        printf("%s\n", de->d_name);
-        tam = strlen(de->d_name);
-        printf( "TAMANHO DO DADO %d\n",tam );
-        if (tam > 15) {
-          cont = split_string(de->d_name,cont, tam, socket);
-        } else {
-          p1 = protocolo_server(de->d_name, 11, tam, cont);
-          ultima = protocolo_string(p1);
-          printf("STRING MENOR QUE 15 %s %d\n", ultima,tam);
-          envia_protocolo(ultima, socket);
+  else
+    while ((de = readdir(dr)) != NULL){
+
+      fds[0].fd = socket;
+      fds[0].events = 0;
+      fds[0].events |= POLLIN;
+
+
+      enter++;
+      printf("\n");
+      printf("%s\n", de->d_name);
+      tam = strlen(de->d_name);
+      printf( "TAMANHO DO DADO %d\n",tam );
+      if (tam > 15) {
+        cont = split_string(de->d_name,cont, tam, socket);
+      } else {
+        p1 = protocolo_server(de->d_name, 11, tam, cont);
+        ultima = protocolo_string(p1);
+        printf("STRING MENOR QUE 15 %s %d\n", ultima,tam);
+        envia_protocolo(ultima, socket);
+        time = poll(fds, 1, 6000);
+        if (time == 0){
+            printf("TIMEOUT!\n");
+            break;
+        }else {
           string = recebe_protocolo(socket);
           //printf( "chegando %s\n",string);
           p2 = abre_protocolo(string);
@@ -152,24 +179,27 @@ int server_LS(estrutura_pacote *p, int socket) {
           }else if (p2->tipo == 9) {
             envia_protocolo(ultima, socket);
           }
-          if (enter == 5) {
-            p1 = protocolo_server("\n", 11, strlen("\n"), cont);
-            enter = 0;
-          } else {
-            p1 = protocolo_server("  ", 11, strlen("  "), cont);
-          }
-          ultima = protocolo_string(p1);
-          printf( "ACABOU A TRANSMISSAO %s\n", ultima);
-          envia_protocolo(ultima, socket);
-          ultima = recebe_protocolo(socket);
         }
-      }
-      p1 = protocolo_server("", 1101, 0, cont);
-      string = protocolo_string(p1);
-      envia_protocolo(string, socket);
 
-    //closedir(dr);
-    return 0;
+        if (enter == 5) {
+          p1 = protocolo_server("\n", 11, strlen("\n"), cont);
+          enter = 0;
+        } else {
+          p1 = protocolo_server("  ", 11, strlen("  "), cont);
+        }
+        ultima = protocolo_string(p1);
+        printf( "%s\n", ultima);
+        envia_protocolo(ultima, socket);
+        ultima = recebe_protocolo(socket);
+      }
+    }
+    p1 = protocolo_server("", 1101, 0, cont);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+    printf("ACABOU A TRANSMISSAO\n");
+
+  //closedir(dr);
+  return 0;
 
 }
 

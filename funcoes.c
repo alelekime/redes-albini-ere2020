@@ -199,7 +199,7 @@ void client_VER(linha_comando *entrada, int socket) {
         //printf("%d\n", p1->tipo);
         p = protocolo_server("", 8, 0, 0);
         saida = protocolo_string(p);
-        //envia_protocolo(saida, socket);
+        envia_protocolo(saida, socket);
 
         if (p1 -> tipo == 15 && !(strcmp(p1->dados, "3")) ) {
           printf("ERRO = %s\n",p1-> dados);
