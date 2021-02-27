@@ -19,15 +19,15 @@ void server_CD(estrutura_pacote *p, int socket) {
     p1 = protocolo_server("2", 15, strlen("2"), 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
-    printf("saindo %s\n", string);
   }
+
+
 }
 
 void server_VER(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int fd = 0;
   struct pollfd fds[1];
-
   int seq = 0;
   int time ;
   char *caracters = (char*)malloc(sizeof(char)*15);
@@ -53,30 +53,48 @@ void server_VER(estrutura_pacote *p, int socket) {
       if (time == 0){
         printf("TIMEOUT!\n");
         break;
-      }
-       else  {
-            entrada = recebe_protocolo(socket);
-            printf("%s\n", entrada);
-            p2 = abre_protocolo(entrada);
-            printf("%d\n", p2->tipo);
-            if (p1-> tipo == 15) {
-              printf("ERRO, REENVIANDO\n");
-              envia_protocolo(string, socket);
-            }else{
-              printf("ACK DO CLIENTE\n");
-            }
-            seq++;
+      } else {
+        entrada = recebe_protocolo(socket);
+        printf("%s\n", entrada);
+        p2 = abre_protocolo(entrada);
+        printf("%d\n", p2->tipo);
+        if (p2-> tipo == 15) {
+          printf("ERRO, REENVIANDO\n");
+          envia_protocolo(string, socket);
+        } else {
+          printf("ACK DO CLIENTE\n");
         }
+        seq++;
+      }
     }
     p1 = protocolo_server("", 13, 0, seq);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
+    printf("nsndsabha\n" );
   }else{
     printf("erro arq\n");
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
   }
+  fds[0].fd = socket;
+  fds[0].events = 0;
+  fds[0].events |= POLLIN;
+  printf("FINAL DA TRANSMISSÃO\n");
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+  } else {
+    entrada = recebe_protocolo(socket);
+    p2 = abre_protocolo(entrada);
+      if (p2-> tipo == 15) {
+        printf("ERRO, REENVIANDO\n");
+        envia_protocolo(string, socket);
+      } else {
+        printf("ACK DO CLIENTE\n");
+      }
+    }
+
 }
 
 int split_string(char *string,int cont, int tam, int socket) {
@@ -144,15 +162,11 @@ int server_LS(estrutura_pacote *p, int socket) {
 
   if (dr == NULL)
       printf("ERRO" );
-
   else
     while ((de = readdir(dr)) != NULL){
-
       fds[0].fd = socket;
       fds[0].events = 0;
       fds[0].events |= POLLIN;
-
-
       enter++;
       printf("\n");
       printf("%s\n", de->d_name);
@@ -196,9 +210,27 @@ int server_LS(estrutura_pacote *p, int socket) {
     p1 = protocolo_server("", 1101, 0, cont);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
+    fds[0].fd = socket;
+    fds[0].events = 0;
+    fds[0].events |= POLLIN;
+    time = poll(fds, 1, 6000);
+    if (time == 0){
+        printf("TIMEOUT!\n");
+        return 0;
+    }else {
+      string = recebe_protocolo(socket);
+      //printf( "chegando %s\n",string);
+      p2 = abre_protocolo(string);
+      cont++;
+
+      if (p2 -> tipo == 8) {
+        printf("ACK DO CLIENTE\n");
+      }else if (p2->tipo == 9) {
+        envia_protocolo(string, socket);
+      }
+    }
     printf("ACABOU A TRANSMISSAO\n");
 
-  //closedir(dr);
   return 0;
 
 }
