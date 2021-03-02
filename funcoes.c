@@ -7,7 +7,7 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
   char *novo = (char*)malloc(sizeof(char) * 15);
   strncpy(novo, dado,(strlen(dado)-1)); // retira o \0 do final da string
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
-  //printf("here\n");
+
   p1 -> marcador = "01111110";
   p1 -> tamanho = acha_binario(tam);
   p1 -> endereco_origem = "10";
@@ -23,7 +23,7 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
       }
   }
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
-  //  mostra_protocolo(p1);
+  mostra_protocolo(p1);
   printf("%d\n", p1-> tipo );
   return p1;
 }
@@ -171,28 +171,34 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
   return p;
 }
 
-void client_LINHA(linha_comando *entrada, int socket) {
+int client_LINHA(linha_comando *entrada, int socket) {
   int fd = 0;
   int time;
   struct pollfd fds[1];
-
+  char *linha = malloc( sizeof(int));
   char *saida = (char*)malloc( sizeof(char)* 256);
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1, *p;
+
+
+
+  p1 = protocolo(entrada -> nome_arq,3, strlen(entrada-> nome_arq), 0);
+  string = protocolo_string(p1);
+  printf("%s\n", string);
+  envia_protocolo(string, socket);
 
   fds[0].fd = socket;
   fds[0].events = 0;
   fds[0].events |= POLLIN;
 
-  p1 = protocolo(entrada -> nome_arq,2, strlen(entrada-> nome_arq), 0);
-  string = protocolo_string(p1);
-  envia_protocolo(string, socket);
   time = poll(fds, 1, 3500);
   if (time == 0){
     printf("TIMEOUT!\n");
-    break;
+    return 0;
   } else {
+    printf("ethernet\n");
     string = recebe_protocolo(socket);
+    printf("%s\n", string);
     if (strlen(string) > 5){
       p1 = abre_protocolo(string);
       if (p1 -> tipo == 8) {
@@ -205,37 +211,41 @@ void client_LINHA(linha_comando *entrada, int socket) {
       }
     }
   }
-  p1 = protocolo(entrada -> linha,10, strlen(entrada-> linha), 1);
+  snprintf(linha, 4, "%d",entrada -> linha);
+  printf("linha = %s\n", linha);
+  printf("linha = %lu\n", strlen(linha));
+  p1 = protocolo_server(linha,3, strlen(linha), 1);
   string = protocolo_string(p1);
+  printf("%s\n", string);
   envia_protocolo(string, socket);
-  time = poll(fds, 1, 3500);
-  if (time == 0){
-    printf("TIMEOUT!\n");
-    break;
-  }else {
-    printf("%d  \n", entrada-> linha);
-    while (1) {
-      string = recebe_protocolo(socket);
-      if (strlen(string) > 5){
-      p1 = abre_protocolo(string);
-      if (p1 -> tipo == 12) {
-        printf("%s",p1->dados );
-        string = recebe_protocolo(socket);
-        p1 = abre_protocolo(string);
-        p = protocolo_server("", 8, 0, 0);
-        saida = protocolo_string(p);
-        envia_protocolo(saida, socket);
-      }else  if (p1-> tipo == 13){
-        printf("\nFim da transmissao\n");
-        p = protocolo_server("", 8, 0, 0);
-        saida = protocolo_string(p);
-        envia_protocolo(saida, socket);
-        break;
-      }
-    }
-  }
+//   time = poll(fds, 1, 3500);
+//   if (time == 0){
+//     printf("TIMEOUT!\n");
+//     break;
+//   }else {
+//     printf("%d  \n", entrada-> linha);
+//     while (1) {
+//       string = recebe_protocolo(socket);
+//       if (strlen(string) > 5){
+//       p1 = abre_protocolo(string);
+//       if (p1 -> tipo == 12) {
+//         printf("%s",p1->dados );
+//         string = recebe_protocolo(socket);
+//         p1 = abre_protocolo(string);
+//         p = protocolo_server("", 8, 0, 0);
+//         saida = protocolo_string(p);
+//         envia_protocolo(saida, socket);
+//       }else  if (p1-> tipo == 13){
+//         printf("\nFim da transmissao\n");
+//         p = protocolo_server("", 8, 0, 0);
+//         saida = protocolo_string(p);
+//         envia_protocolo(saida, socket);
+//         break;
+//       }
+//     }
+//   }
+// }
 }
-
 void client_VER(linha_comando *entrada, int socket) {
   struct pollfd fds[1];
   int linha = 2;
@@ -417,7 +427,7 @@ void le_comando( linha_comando *entrada, int socket) {
     entrada -> linha =  atoi(strdup(strtok(NULL, " ")));//<numero_linha>
     quebra =  strdup(strtok(NULL, ""));//<nome_arq>
     entrada-> nome_arq = quebra;
-    client_LINHA(); // mostra a linha escolida do arquivo
+    client_LINHA(entrada, socket); // mostra a linha escolida do arquivo
   }
   else if(!strcmp(quebra, "linhas")){
     entrada -> linha_inicial =  atoi(strdup(strtok(NULL, " ")));//<numero_linha_inicial>

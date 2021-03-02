@@ -24,6 +24,7 @@ void server_CD(estrutura_pacote *p, int socket) {
 
 }
 
+
 void server_VER(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int fd = 0;
@@ -94,6 +95,30 @@ void server_VER(estrutura_pacote *p, int socket) {
         printf("ACK DO CLIENTE\n");
       }
     }
+
+}
+
+void server_LINHA(estrutura_pacote *p, int socket) {
+  estrutura_pacote *p1, *p2;
+  char *string = (char*)malloc( sizeof(char)* 256);
+  char *ultima = (char*)malloc( sizeof(char)* 256);
+  FILE *arquivo;
+  printf("%s\n",p->dados);
+  arquivo = fopen (p->dados,"r");
+  if (arquivo != NULL){
+    string = recebe_protocolo(socket);
+    printf("pacote = %s\n", string);
+    p2 = abre_protocolo(string);
+    printf("%s\n", p2->dados);
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+  }else {
+    p1 = protocolo_server("3", 15, strlen("3"), 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+  }
+
 
 }
 
@@ -252,13 +277,12 @@ void funcoes_server(int socket_confirmado) {
           break;
         case 1:       //LS
           server_LS(p, socket_confirmado);
-          printf("ls\n");
           break;
         case 2:      //VER
-          printf("VER\n");
           server_VER(p, socket_confirmado);
           break;
-        case 11:      // LINHA
+        case 3:      // LINHA
+          server_LINHA(p, socket_confirmado);
           break;
         case 100:     //LINHAS
           break;
