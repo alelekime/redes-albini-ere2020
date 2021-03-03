@@ -100,19 +100,83 @@ void server_VER(estrutura_pacote *p, int socket) {
 
 void server_LINHA(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
+  int linha;
+  int linha_arquivo = 0;
+  bool final_da_linha = false;
+  char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
-  char *ultima = (char*)malloc( sizeof(char)* 256);
+  char *caracters = (char*)malloc( sizeof(char)* 15);
   FILE *arquivo;
-  printf("%s\n",p->dados);
+  p1 = protocolo_server("", ACK, 0, 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+  printf("NOME DO ARQUVO = %s\n",p->dados);
   arquivo = fopen (p->dados,"r");
   if (arquivo != NULL){
     string = recebe_protocolo(socket);
-    printf("pacote = %s\n", string);
     p2 = abre_protocolo(string);
-    printf("%s\n", p2->dados);
+    linha = stringToDecimal(p2->dados);
+    printf("NUMERO DA LINHA = %d \n", linha);
     p1 = protocolo_server("", ACK, 0, 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
+
+    while (1) {
+      if (!fread(caracter, sizeof(char), 1, arquivo)) {
+        break;
+      }
+    //  printf("%s", caracter);
+      if (!strcmp(caracter, "\n")) {
+        //printf("enter \n");
+
+        linha_arquivo++;
+      }
+      if (linha_arquivo == linha ) {
+        printf("%d\n",linha_arquivo );
+        while (fread(caracters, sizeof(char), 15, arquivo) && !(final_da_linha) ) {
+          //printf("gnfdjgjd\n");
+          for (size_t i = 0; i < 15; i++) {
+            if (!strcmp(caracters, "\n")) {
+              printf(" //%s\n",caracters );
+              final_da_linha = true;
+            }else if (final_da_linha) {
+              caracters= "";
+            }
+            *caracter++;
+          }
+          printf("linha %s\n", caracters);
+          // p1 = protocolo_server(caracters, 12, strlen(caracters), seq);
+          // string = protocolo_string(p1);
+          // printf("%s\n", string);
+          // printf("%d\n",seq );
+          // envia_protocolo(string, socket);
+          //
+          // fds[0].fd = socket;
+          // fds[0].events = 0;
+        	// fds[0].events |= POLLIN;
+          // time = poll(fds, 1, 3500);
+          // if (time == 0){
+          //   printf("TIMEOUT!\n");
+          //   break;
+          // } else {
+          //   entrada = recebe_protocolo(socket);
+          //   printf("%s\n", entrada);
+          //   p2 = abre_protocolo(entrada);
+          //   printf("%d\n", p2->tipo);
+          //   if (p2-> tipo == 15) {
+          //     printf("ERRO, REENVIANDO\n");
+          //     envia_protocolo(string, socket);
+          //   } else {
+          //     printf("ACK DO CLIENTE\n");
+          //   }
+          //   seq++;
+          // }
+          //printf("%s\n", caracters);
+        }
+        break;
+      }
+    }
+
   }else {
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);

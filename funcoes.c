@@ -179,9 +179,6 @@ int client_LINHA(linha_comando *entrada, int socket) {
   char *saida = (char*)malloc( sizeof(char)* 256);
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1, *p;
-
-
-
   p1 = protocolo(entrada -> nome_arq,3, strlen(entrada-> nome_arq), 0);
   string = protocolo_string(p1);
   printf("%s\n", string);
@@ -197,17 +194,20 @@ int client_LINHA(linha_comando *entrada, int socket) {
     return 0;
   } else {
     printf("ethernet\n");
-    string = recebe_protocolo(socket);
-    printf("%s\n", string);
-    if (strlen(string) > 5){
-      p1 = abre_protocolo(string);
-      if (p1 -> tipo == 8) {
-        printf("\nACK\n");
-      }else if (p1 -> tipo == 9) {
-        printf("\nNACK\n");
-      } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
-        printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
-        printf("%s\n",p1-> dados);
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        printf("ENTRANDO = %s\n", string);
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("\nACK\n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
+          printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
+          printf("%s\n",p1-> dados);
+        }
+        break;
       }
     }
   }
@@ -218,33 +218,32 @@ int client_LINHA(linha_comando *entrada, int socket) {
   string = protocolo_string(p1);
   printf("%s\n", string);
   envia_protocolo(string, socket);
-//   time = poll(fds, 1, 3500);
-//   if (time == 0){
-//     printf("TIMEOUT!\n");
-//     break;
-//   }else {
-//     printf("%d  \n", entrada-> linha);
-//     while (1) {
-//       string = recebe_protocolo(socket);
-//       if (strlen(string) > 5){
-//       p1 = abre_protocolo(string);
-//       if (p1 -> tipo == 12) {
-//         printf("%s",p1->dados );
-//         string = recebe_protocolo(socket);
-//         p1 = abre_protocolo(string);
-//         p = protocolo_server("", 8, 0, 0);
-//         saida = protocolo_string(p);
-//         envia_protocolo(saida, socket);
-//       }else  if (p1-> tipo == 13){
-//         printf("\nFim da transmissao\n");
-//         p = protocolo_server("", 8, 0, 0);
-//         saida = protocolo_string(p);
-//         envia_protocolo(saida, socket);
-//         break;
-//       }
-//     }
-//   }
-// }
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  }else {
+    printf("%d  \n", entrada-> linha);
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        printf("ENTRANDO = %s\n", string);
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("\nACK\n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
+          printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
+          printf("%s\n",p1-> dados);
+        }
+        break;
+      }
+    }
+  }
+
+
+
 }
 void client_VER(linha_comando *entrada, int socket) {
   struct pollfd fds[1];

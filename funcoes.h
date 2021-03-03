@@ -86,3 +86,4 @@ int split_string(char *string,int cont, int tam, int socket);
 int acha_binario(int tam) ;
 char * convert_binary(int dec, char *output);
 int client_LINHA(linha_comando *entrada, int socket) ;
+int stringToDecimal(char * str);

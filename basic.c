@@ -23,6 +23,19 @@ int convert(long long n) {
     return dec;
 }
 
+
+int stringToDecimal(char * str){
+    int result =0;
+int len=strlen(str);
+for(int i=0,j=len-1;i<len;i++,j--)
+    {
+    result += ((int)str[i] - 48)*pow(10,j);
+    }
+
+   return result;
+}
+
+
 int acha_binario(int tam) {
   switch (tam) {
     case 1:
