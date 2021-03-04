@@ -242,6 +242,28 @@ int client_LINHA(linha_comando *entrada, int socket) {
     }
   }
 
+  fds[0].fd = socket;
+  fds[0].events = 0;
+  fds[0].events |= POLLIN;
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  }else {
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        p1 = abre_protocolo(string);
+        printf("%s", p1->dados);
+        if (p1 -> tipo == 13) {
+          printf("\nACABOU A TRANSMISSAO\n");
+          break;
+        }
+
+      }
+    }
+
+  }
 
 
 }

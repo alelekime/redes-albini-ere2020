@@ -102,10 +102,13 @@ void server_LINHA(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int linha;
   int linha_arquivo = 0;
+  int i = 0;
+  int k;
   bool final_da_linha = false;
   char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
-  char *caracters = (char*)malloc( sizeof(char)* 15);
+  char *string_linha = (char*)malloc( sizeof(char)* 256);
+  char *quebra = (char*)malloc( sizeof(char)* 15);
   FILE *arquivo;
   p1 = protocolo_server("", ACK, 0, 0);
   string = protocolo_string(p1);
@@ -127,54 +130,52 @@ void server_LINHA(estrutura_pacote *p, int socket) {
       }
     //  printf("%s", caracter);
       if (!strcmp(caracter, "\n")) {
-        //printf("enter \n");
-
         linha_arquivo++;
       }
-      if (linha_arquivo == linha ) {
+
+      if (linha_arquivo == linha - 1 ) {
         printf("%d\n",linha_arquivo );
-        while (fread(caracters, sizeof(char), 15, arquivo) && !(final_da_linha) ) {
-          //printf("gnfdjgjd\n");
-          for (size_t i = 0; i < 15; i++) {
-            if (!strcmp(caracters, "\n")) {
-              printf(" //%s\n",caracters );
-              final_da_linha = true;
-            }else if (final_da_linha) {
-              caracters= "";
-            }
-            *caracter++;
+        while (1) {
+          if (!fread(caracter, sizeof(char), 1, arquivo)) {
+            break;
           }
-          printf("linha %s\n", caracters);
-          // p1 = protocolo_server(caracters, 12, strlen(caracters), seq);
-          // string = protocolo_string(p1);
-          // printf("%s\n", string);
-          // printf("%d\n",seq );
-          // envia_protocolo(string, socket);
-          //
-          // fds[0].fd = socket;
-          // fds[0].events = 0;
-        	// fds[0].events |= POLLIN;
-          // time = poll(fds, 1, 3500);
-          // if (time == 0){
-          //   printf("TIMEOUT!\n");
-          //   break;
-          // } else {
-          //   entrada = recebe_protocolo(socket);
-          //   printf("%s\n", entrada);
-          //   p2 = abre_protocolo(entrada);
-          //   printf("%d\n", p2->tipo);
-          //   if (p2-> tipo == 15) {
-          //     printf("ERRO, REENVIANDO\n");
-          //     envia_protocolo(string, socket);
-          //   } else {
-          //     printf("ACK DO CLIENTE\n");
-          //   }
-          //   seq++;
-          // }
-          //printf("%s\n", caracters);
+          if(!strcmp(caracter, "\n")){
+            break;
+          }
+          string_linha[i] = caracter[0];
+          i++;
+        }
+        printf("%s %d\n", string_linha, i);
+        i = strlen(string_linha);
+        if (i < 15 ) {
+          p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+          string = protocolo_string(p1);
+          envia_protocolo(string, socket);
+        } else {
+          k = i % 15;
+          for (size_t j = 0; j < i/15; j++) {
+            strncpy(quebra, string_linha,15);
+            printf("QUEBRA %s\n", quebra);
+            p1 = protocolo_server(quebra, 12, strlen(quebra), j);
+            string = protocolo_string(p1);
+            envia_protocolo(string, socket);
+            for (size_t l = 0; l < 15; l++) {
+              string_linha++;
+            }
+          }
+          if (i > 0) {
+            p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+            string = protocolo_string(p1);
+            envia_protocolo(string, socket);
+          }
+          p1 = protocolo_server("", 1101, 0, 0);
+          string = protocolo_string(p1);
+          envia_protocolo(string, socket);
+
         }
         break;
       }
+
     }
 
   }else {
@@ -210,7 +211,8 @@ int split_string(char *string,int cont, int tam, int socket) {
       envia_protocolo(ultima_mensagem, socket);
     }
     cont++;
-    for (int i = 0; i < 15; i++) string++;
+    for (int i = 0; i < 15; i++)
+      string++;
     tam -=15;
   }
 
