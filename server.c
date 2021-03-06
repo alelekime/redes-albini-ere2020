@@ -24,7 +24,6 @@ void server_CD(estrutura_pacote *p, int socket) {
 
 }
 
-
 void server_VER(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int fd = 0;
@@ -98,24 +97,25 @@ void server_VER(estrutura_pacote *p, int socket) {
 
 }
 
-void server_LINHA(estrutura_pacote *p, int socket) {
+int server_LINHA(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int linha;
   int linha_arquivo = 0;
   int i = 0;
   int k;
+  int t;
   bool final_da_linha = false;
   char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
   char *string_linha = (char*)malloc( sizeof(char)* 256);
   char *quebra = (char*)malloc( sizeof(char)* 15);
   FILE *arquivo;
-  p1 = protocolo_server("", ACK, 0, 0);
-  string = protocolo_string(p1);
-  envia_protocolo(string, socket);
-  printf("NOME DO ARQUVO = %s\n",p->dados);
   arquivo = fopen (p->dados,"r");
   if (arquivo != NULL){
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+    printf("NOME DO ARQUVO = %s\n",p->dados);
     string = recebe_protocolo(socket);
     p2 = abre_protocolo(string);
     linha = stringToDecimal(p2->dados);
@@ -123,7 +123,7 @@ void server_LINHA(estrutura_pacote *p, int socket) {
     p1 = protocolo_server("", ACK, 0, 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
-
+    t = 0;
     while (1) {
       if (!fread(caracter, sizeof(char), 1, arquivo)) {
         break;
@@ -134,18 +134,31 @@ void server_LINHA(estrutura_pacote *p, int socket) {
       }
 
       if (linha_arquivo == linha - 1 ) {
-        printf("%d\n",linha_arquivo );
+        printf("LINHA NO ARQUIVO = %d\n",linha_arquivo );
+
         while (1) {
           if (!fread(caracter, sizeof(char), 1, arquivo)) {
             break;
           }
+
+          printf("%s\n",caracter );
           if(!strcmp(caracter, "\n")){
+            if (t == 0) {
+              p1 = protocolo_server("", 6, strlen(""), 0);
+              printf("PULA LINHA");
+              string = protocolo_string(p1);
+              envia_protocolo(string, socket);
+              p1 = protocolo_server("", 1101, 0, 0);
+              string = protocolo_string(p1);
+              envia_protocolo(string, socket);
+              return 0;
+            }
             break;
           }
           string_linha[i] = caracter[0];
           i++;
+          t++;
         }
-        printf("%s %d\n", string_linha, i);
         i = strlen(string_linha);
         if (i < 15 ) {
           p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
@@ -165,6 +178,7 @@ void server_LINHA(estrutura_pacote *p, int socket) {
           }
           if (i > 0) {
             p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+            printf("FIM %s\n", string_linha);
             string = protocolo_string(p1);
             envia_protocolo(string, socket);
           }
@@ -173,14 +187,21 @@ void server_LINHA(estrutura_pacote *p, int socket) {
           envia_protocolo(string, socket);
 
         }
-        break;
+        return 0;
       }
 
     }
 
+    p1 = protocolo_server("4", 15, strlen("4"), 0);
+    string = protocolo_string(p1);
+    printf("%s\n", string);
+    envia_protocolo(string, socket);
+
+
   }else {
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
+    printf("%s\n", string);
     envia_protocolo(string, socket);
   }
 

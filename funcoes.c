@@ -23,8 +23,6 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
       }
   }
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
-  mostra_protocolo(p1);
-  printf("%d\n", p1-> tipo );
   return p1;
 }
 
@@ -181,7 +179,6 @@ int client_LINHA(linha_comando *entrada, int socket) {
   estrutura_pacote *p1, *p;
   p1 = protocolo(entrada -> nome_arq,3, strlen(entrada-> nome_arq), 0);
   string = protocolo_string(p1);
-  printf("%s\n", string);
   envia_protocolo(string, socket);
 
   fds[0].fd = socket;
@@ -193,49 +190,41 @@ int client_LINHA(linha_comando *entrada, int socket) {
     printf("TIMEOUT!\n");
     return 0;
   } else {
-    printf("ethernet\n");
     while (1) {
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
-        printf("ENTRANDO = %s\n", string);
         p1 = abre_protocolo(string);
         if (p1 -> tipo == 8) {
-          printf("\nACK\n");
+          printf("ACK = RECEBEU O NOME DO ARQUIVO \n");
         }else if (p1 -> tipo == 9) {
           printf("\nNACK\n");
-        } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
-          printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
-          printf("%s\n",p1-> dados);
+        } else if (p1 -> tipo == 15 ) {
+          printf("\nERRO ENCONTRADO%s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
+          return 0;
         }
         break;
       }
     }
   }
-  snprintf(linha, 4, "%d",entrada -> linha);
-  printf("linha = %s\n", linha);
-  printf("linha = %lu\n", strlen(linha));
+  snprintf(linha, 10, "%d",entrada -> linha);
   p1 = protocolo_server(linha,3, strlen(linha), 1);
   string = protocolo_string(p1);
-  printf("%s\n", string);
   envia_protocolo(string, socket);
   time = poll(fds, 1, 3500);
   if (time == 0){
     printf("TIMEOUT!\n");
     return 0;
   }else {
-    printf("%d  \n", entrada-> linha);
     while (1) {
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
-        printf("ENTRANDO = %s\n", string);
         p1 = abre_protocolo(string);
         if (p1 -> tipo == 8) {
-          printf("\nACK\n");
+          printf("ACK = RECEBEU O NUMERO DA LINHA\n");
         }else if (p1 -> tipo == 9) {
           printf("\nNACK\n");
-        } else if (p1 -> tipo == 7 && !(strcmp(p1->dados, "2")) ) {
-          printf("\nERRO ENCONTRADO\n%sNÃO EXISTE ESSE DIRETÓRIO\n", entrada-> diretorio);
-          printf("%s\n",p1-> dados);
+        } else if (p1 -> tipo == 15) {
+            printf("\nERRO ENCONTRADO %s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
         }
         break;
       }
@@ -250,23 +239,27 @@ int client_LINHA(linha_comando *entrada, int socket) {
     printf("TIMEOUT!\n");
     return 0;
   }else {
+    printf("DADO = ");
     while (1) {
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
         p1 = abre_protocolo(string);
         printf("%s", p1->dados);
-        if (p1 -> tipo == 13) {
+        if (p1-> tipo == 6) {
+          printf("ESCOLHA OUTRA LINHA\n");
+          break;
+        }else if (p1 -> tipo == 13) {
           printf("\nACABOU A TRANSMISSAO\n");
           break;
+        }else if (p1 -> tipo == 15) {
+            printf("\nERRO ENCONTRADO %s\n%d NÃO EXISTE ESSA LINHA \n",p1->dados, entrada->linha);
+            break;
         }
-
       }
     }
-
   }
-
-
 }
+
 void client_VER(linha_comando *entrada, int socket) {
   struct pollfd fds[1];
   int linha = 2;
