@@ -70,7 +70,6 @@ void server_VER(estrutura_pacote *p, int socket) {
     p1 = protocolo_server("", 13, 0, seq);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
-    printf("nsndsabha\n" );
   }else{
     printf("erro arq\n");
     p1 = protocolo_server("3", 15, strlen("3"), 0);
@@ -206,6 +205,128 @@ int server_LINHA(estrutura_pacote *p, int socket) {
   }
 
 
+}
+
+int server_LINHAS(estrutura_pacote *p, int socket){
+  estrutura_pacote *p1, *p2;
+  int linha = 0;
+  int linha1, linha2;
+  int linha_arquivo = 0;
+  int i = 0;
+  int k;
+  int t;
+  int y = 0;
+  bool final_da_linha = false;
+  char *caracter = (char*)malloc(sizeof(char));
+  char *string = (char*)malloc( sizeof(char)* 256);
+  char *string_linha = (char*)malloc( sizeof(char)* 256);
+  char *quebra = (char*)malloc( sizeof(char)* 15);
+  FILE *arquivo;
+  arquivo = fopen (p->dados,"r");
+  if (arquivo != NULL){
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+    printf("NOME DO ARQUVO = %s\n",p->dados);
+
+    string = recebe_protocolo(socket);
+    p2 = abre_protocolo(string);
+    linha1 = stringToDecimal(p2->dados);
+    printf("NUMERO DA LINHA INICIAL = %d \n", linha1);
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+
+    string = recebe_protocolo(socket);
+    p2 = abre_protocolo(string);
+    linha2 = stringToDecimal(p2->dados);
+    printf("NUMERO DA LINHA FINAL = %d \n", linha2);
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+    // if (linha1 == linha2 ) {
+    //   p2->linha = linha1;
+    //   server_LINHA(p2,socket);
+    //   return 0;
+    // }
+    t = 0;
+    while (1) {
+      if (!fread(caracter, sizeof(char), 1, arquivo)) {
+        break;
+      }
+    //  printf("%s", caracter);
+      if (!strcmp(caracter, "\n")) {
+        linha_arquivo++;
+      }
+
+      if (linha_arquivo == linha1 - 1 ) {
+        linha = linha_arquivo;
+        printf("LINHA NO ARQUIVO = %d\n",linha_arquivo );
+
+        while (linha < linha2) {
+          printf("LINHA DE PARADA = %d\n",linha );
+          printf("INDICE DO VETOR = %d\n", i);
+          while (1) {
+            if (!fread(caracter, sizeof(char), 1, arquivo)) {
+              break;
+            }
+            if(!strcmp(caracter, "\n")){
+              linha++;
+              string_linha[i] = caracter[0];
+              break;
+            }
+            string_linha[i] = caracter[0];
+            printf("%c",string_linha[i] );
+            i++;
+            t++;
+          }
+          i = strlen(string_linha);
+          printf("%d \n", i);
+          if (i < 15 ) {
+            p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+            string = protocolo_string(p1);
+            envia_protocolo(string, socket);
+          } else {
+            k = i % 15;
+            for (size_t j = 0; j < i/15; j++) {
+              strncpy(quebra, string_linha,15);
+              p1 = protocolo_server(quebra, 12, strlen(quebra), j);
+              string = protocolo_string(p1);
+              printf("%s\n", string);
+              envia_protocolo(string, socket);
+              for (size_t l = 0; l < 15; l++) {
+                string_linha++;
+              }
+            }
+            if (i > 0) {
+              p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+              printf("FIM %s\n", string_linha);
+              string = protocolo_string(p1);
+              envia_protocolo(string, socket);
+            }
+          }
+          i=0;
+        }
+        p1 = protocolo_server("", 1101, 0, 0);
+        string = protocolo_string(p1);
+        envia_protocolo(string, socket);
+        return 0;
+      }
+
+    }
+
+    p1 = protocolo_server("4", 15, strlen("4"), 0);
+    string = protocolo_string(p1);
+    printf("%s\n", string);
+    envia_protocolo(string, socket);
+
+
+  }else {
+    p1 = protocolo_server("3", 15, strlen("3"), 0);
+    string = protocolo_string(p1);
+    printf("%s\n", string);
+    envia_protocolo(string, socket);
+  }
 }
 
 int split_string(char *string,int cont, int tam, int socket) {
@@ -371,9 +492,11 @@ void funcoes_server(int socket_confirmado) {
         case 3:      // LINHA
           server_LINHA(p, socket_confirmado);
           break;
-        case 100:     //LINHAS
+        case 4:     //LINHAS
+        server_LINHAS(p, socket_confirmado);
           break;
         case 101:     //EDIT
+
           break;
         case 1010:   //linha inicial e final
           break;

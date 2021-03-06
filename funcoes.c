@@ -169,6 +169,129 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
   return p;
 }
 
+int client_LINHAS(linha_comando *entrada, int socket){
+  int fd = 0;
+  int time;
+  struct pollfd fds[1];
+  char *linha = malloc( sizeof(int));
+  char *saida = (char*)malloc( sizeof(char)* 256);
+  char *string = (char*)malloc( sizeof(char)* 256);
+  estrutura_pacote *p1, *p;
+
+  p1 = protocolo(entrada -> nome_arq,4, strlen(entrada-> nome_arq), 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+
+  fds[0].fd = socket;
+  fds[0].events = 0;
+  fds[0].events |= POLLIN;
+
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  } else {
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("ACK = RECEBEU O NOME DO ARQUIVO \n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 15 ) {
+          printf("\nERRO ENCONTRADO%s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
+          return 0;
+        }
+        break;
+      }
+    }
+  }
+  snprintf(linha, 10, "%d",entrada -> linha_inicial);
+  p1 = protocolo_server(linha,4, strlen(linha), 1);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  }else {
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("ACK = RECEBEU O NUMERO DA LINHA INICIAL\n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 15) {
+            printf("\nERRO ENCONTRADO %s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
+        }
+        break;
+      }
+    }
+  }
+
+  snprintf(linha, 10, "%d",entrada -> linha_final);
+  p1 = protocolo_server(linha,4, strlen(linha), 1);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+  fds[0].fd = socket;
+  fds[0].events = 0;
+  fds[0].events |= POLLIN;
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  }else {
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("ACK = RECEBEU O NUMERO DA LINHA FINAL\n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 15) {
+            printf("\nERRO ENCONTRADO %s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
+        }
+        break;
+      }
+    }
+  }
+  printf("DADO = ");
+  while (1) {
+
+    fds[0].fd = socket;
+    fds[0].events = 0;
+    fds[0].events |= POLLIN;
+    time = poll(fds, 1, 3500);
+    if (time == 0){
+      printf("TIMEOUT!\n");
+      return 0;
+    }else {
+
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        //printf("%s\n", string);
+        p1 = abre_protocolo(string);
+       printf("%s", p1->dados);
+        if (p1-> tipo == 6) {
+          printf("ESCOLHA OUTRA LINHA\n");
+          break;
+        }else if (p1 -> tipo == 13) {
+          printf("\nACABOU A TRANSMISSAO\n");
+          break;
+        }else if (p1 -> tipo == 15) {
+            printf("\nERRO ENCONTRADO %s\n%d NÃO EXISTE ESSA LINHA \n",p1->dados, entrada->linha);
+            break;
+        }
+      }
+    }
+  }
+
+}
+
 int client_LINHA(linha_comando *entrada, int socket) {
   int fd = 0;
   int time;
@@ -177,6 +300,7 @@ int client_LINHA(linha_comando *entrada, int socket) {
   char *saida = (char*)malloc( sizeof(char)* 256);
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1, *p;
+
   p1 = protocolo(entrada -> nome_arq,3, strlen(entrada-> nome_arq), 0);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
@@ -231,20 +355,23 @@ int client_LINHA(linha_comando *entrada, int socket) {
     }
   }
 
-  fds[0].fd = socket;
-  fds[0].events = 0;
-  fds[0].events |= POLLIN;
-  time = poll(fds, 1, 3500);
-  if (time == 0){
-    printf("TIMEOUT!\n");
-    return 0;
-  }else {
-    printf("DADO = ");
-    while (1) {
+  printf("DADO = ");
+  while (1) {
+
+    fds[0].fd = socket;
+    fds[0].events = 0;
+    fds[0].events |= POLLIN;
+    time = poll(fds, 1, 3500);
+    if (time == 0){
+      printf("TIMEOUT!\n");
+      return 0;
+    }else {
+
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
+        //printf("%s\n", string);
         p1 = abre_protocolo(string);
-        printf("%s", p1->dados);
+       printf("%s", p1->dados);
         if (p1-> tipo == 6) {
           printf("ESCOLHA OUTRA LINHA\n");
           break;
@@ -258,6 +385,7 @@ int client_LINHA(linha_comando *entrada, int socket) {
       }
     }
   }
+
 }
 
 void client_VER(linha_comando *entrada, int socket) {
@@ -448,7 +576,7 @@ void le_comando( linha_comando *entrada, int socket) {
     entrada -> linha_final =  atoi(strdup(strtok(NULL, " ")));//<numero_linha_final>
     quebra =  strdup(strtok(NULL, ""));//<nome_arq>
     entrada-> nome_arq = quebra;
-    //client_LINHAS();//mostra as linhas escolidas do arquivo
+    client_LINHAS(entrada, socket);//mostra as linhas escolidas do arquivo
   }else if (!strcmp(quebra, "edit")){
     entrada -> linha =  atoi(strdup(strtok(NULL, " "))); //<numero_linha>
     quebra =  strdup(strtok(NULL, " "));//<nome_arq>
