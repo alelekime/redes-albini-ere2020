@@ -176,7 +176,7 @@ int client_LINHAS(linha_comando *entrada, int socket){
   char *linha = malloc( sizeof(int));
   char *saida = (char*)malloc( sizeof(char)* 256);
   char *string = (char*)malloc( sizeof(char)* 256);
-  estrutura_pacote *p1, *p;
+  estrutura_pacote *p2,*p1, *p;
 
   p1 = protocolo(entrada -> nome_arq,4, strlen(entrada-> nome_arq), 0);
   string = protocolo_string(p1);
@@ -275,20 +275,36 @@ int client_LINHAS(linha_comando *entrada, int socket){
       if (strlen(string) > 5){
      //printf("%s\n", string);
         p1 = abre_protocolo(string);
-       printf("%s", p1->dados);
+        printf("%s", p1->dados);
         if (p1 -> tipo == 13) {
           printf("\nACABOU A TRANSMISSAO\n");
-          break;
+          p2 = protocolo_server("", ACK, strlen(""), 0);
+          string = protocolo_string(p2);
+          envia_protocolo(string, socket);
+          return 0;
         }else if (p1 -> tipo == 15 && !(strcmp(p1->dados, "3")) )  {
             printf("\nERRO ENCONTRADO NO ARQUIVO\n");
-            break;
+            p2 = protocolo_server("", ACK, strlen(""), 0);
+            string = protocolo_string(p2);
+            envia_protocolo(string, socket);
+            return 0;
         }else if (p1 -> tipo == 15 && !(strcmp(p1->dados, "4")) )  {
             printf("\nERRO ENCONTRADO %s\n NÃO EXISTE ESSA LINHA \n",p1->dados);
-            break;
+            p2 = protocolo_server("", ACK, strlen(""), 0);
+            string = protocolo_string(p2);
+            envia_protocolo(string, socket);
+            return 0;
         }else  if (p1 -> tipo == 15 && !(strcmp(p1->dados, "5")) )  {
+            p2 = protocolo_server("", ACK, strlen(""), 0);
+            string = protocolo_string(p2);
+            envia_protocolo(string, socket);
             printf("\nERRO ENCONTRADO, LINHA FINAL MENOR QUE A INICIAL\n");
-            break;
+            return 0;
         }
+
+        p2 = protocolo_server("", ACK, strlen(""), 0);
+        string = protocolo_string(p2);
+        envia_protocolo(string, socket);
       }
     }
   }

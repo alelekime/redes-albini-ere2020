@@ -207,7 +207,10 @@ int server_LINHA(estrutura_pacote *p, int socket) {
 
 }
 
-int LINHAS(char *nome, int linha, int socket) {
+int LINHAS(FILE *arquivo, int linha, int socket) {
+  int fd = 0;
+  int time;
+  struct pollfd fds[1];
   estrutura_pacote *p1, *p2;
   int linha_arquivo = 0;
   int i = 0;
@@ -217,9 +220,7 @@ int LINHAS(char *nome, int linha, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
   char *string_linha = (char*)malloc( sizeof(char)* 256);
   char *quebra = (char*)malloc( sizeof(char)* 15);
-  FILE *arquivo;
-  arquivo = fopen (nome,"r");
-  if (arquivo != NULL){
+
     t = 0;
     while (1) {
       if (!fread(caracter, sizeof(char), 1, arquivo)) {
@@ -252,6 +253,23 @@ int LINHAS(char *nome, int linha, int socket) {
           string = protocolo_string(p1);
           printf("%s\n", string);
           envia_protocolo(string, socket);
+          fds[0].fd = socket;
+          fds[0].events = 0;
+          fds[0].events |= POLLIN;
+          time = poll(fds, 1, 3500);
+          if (time == 0){
+            printf("TIMEOUT!\n");
+            return 0;
+          }else {
+            string = recebe_protocolo(socket);
+            //printf( "chegando %s\n",string);
+            p2 = abre_protocolo(string);
+            if (p2 -> tipo == 8) {
+              printf("ACK DO CLIENTE\n");
+            }else if (p2->tipo == 9) {
+              envia_protocolo(string, socket);
+            }
+          }
         } else {
           k = i % 15;
           for (int j = 0; j < i/15; j++) {
@@ -260,6 +278,24 @@ int LINHAS(char *nome, int linha, int socket) {
             string = protocolo_string(p1);
             printf("%s\n", string);
             envia_protocolo(string, socket);
+            fds[0].fd = socket;
+            fds[0].events = 0;
+            fds[0].events |= POLLIN;
+            time = poll(fds, 1, 3500);
+            if (time == 0){
+              printf("TIMEOUT!\n");
+              return 0;
+            }else {
+              string = recebe_protocolo(socket);
+              //printf( "chegando %s\n",string);
+              p2 = abre_protocolo(string);
+
+              if (p2 -> tipo == 8) {
+                printf("ACK DO CLIENTE\n");
+              }else if (p2->tipo == 9) {
+                envia_protocolo(string, socket);
+              }
+            }
             for (int l = 0; l < 15; l++) {
               string_linha++;
             }
@@ -270,6 +306,24 @@ int LINHAS(char *nome, int linha, int socket) {
             string = protocolo_string(p1);
             printf("%s\n", string);
             envia_protocolo(string, socket);
+            fds[0].fd = socket;
+            fds[0].events = 0;
+            fds[0].events |= POLLIN;
+            time = poll(fds, 1, 3500);
+            if (time == 0){
+              printf("TIMEOUT!\n");
+              return 0;
+            }else {
+              string = recebe_protocolo(socket);
+              //printf( "chegando %s\n",string);
+              p2 = abre_protocolo(string);
+
+              if (p2 -> tipo == 8) {
+                printf("ACK DO CLIENTE\n");
+              }else if (p2->tipo == 9) {
+                envia_protocolo(string, socket);
+              }
+            }
           }
 
         }
@@ -283,20 +337,33 @@ int LINHAS(char *nome, int linha, int socket) {
     string = protocolo_string(p1);
     //printf("%s\n", string);
     envia_protocolo(string, socket);
+    fds[0].fd = socket;
+    fds[0].events = 0;
+    fds[0].events |= POLLIN;
+    time = poll(fds, 1, 3500);
+    if (time == 0){
+      printf("TIMEOUT!\n");
+      return 0;
+    }else {
+      string = recebe_protocolo(socket);
+      //printf( "chegando %s\n",string);
+      p2 = abre_protocolo(string);
+
+      if (p2 -> tipo == 8) {
+        printf("ACK DO CLIENTE\n");
+      }else if (p2->tipo == 9) {
+        envia_protocolo(string, socket);
+      }
+    }
     return 1;
 
-  }else {
-    perror("Error printed by perror");
-    p1 = protocolo_server("3", 15, strlen("3"), 0);
-    string = protocolo_string(p1);
-    printf("ERRO %s\n", string);
-    envia_protocolo(string, socket);
-    return 2;
-  }
 }
 
 int server_LINHAS(estrutura_pacote *p, int socket){
-  estrutura_pacote *p1, *p2;
+  int fd = 0;
+  int time;
+  struct pollfd fds[1];
+  estrutura_pacote *p1, *p2, *p3;
   int linha = 0;
   int linha1, linha2;
   int linha_arquivo = 0;
@@ -336,26 +403,73 @@ int server_LINHAS(estrutura_pacote *p, int socket){
     string = protocolo_string(p1);
     printf("%s\n", string);
     envia_protocolo(string, socket);
-  } else if (linha1 == linha2) {
-    erro = LINHAS(p->dados, linha1,socket);
-    if ((erro == 1) || (erro == 2))
-      return 0;
-  } else {
-    for (int i = 0; i < linha2 -linha1+1; i++) {
-      erro = LINHAS(p->dados, linha1+i, socket);
-
-      if ((erro == 1) || (erro == 2)) {
-        printf("%d \n", erro);
+  } else{
+    FILE *arquivo = fopen (p->dados,"r");
+    if (arquivo != NULL){
+      if (linha1 == linha2) {
+      erro = LINHAS( arquivo, linha1,socket);
+      if ((erro == 1) || (erro == 2))
         return 0;
+      } else {
+        for (int i = 0; i < linha2 -linha1+1; i++) {
+          rewind(arquivo);
+          erro = LINHAS(arquivo, linha1+i, socket);
+          if ((erro == 1) || (erro == 2)) {
+            printf("%d \n", erro);
+            return 0;
+          }
+        }
       }
+    } else {
+      perror("Error printed by perror");
+      p1 = protocolo_server("3", 15, strlen("3"), 0);
+      string = protocolo_string(p1);
+      printf("ERRO %s\n", string);
+      envia_protocolo(string, socket);
+      fds[0].fd = socket;
+      fds[0].events = 0;
+      fds[0].events |= POLLIN;
+      time = poll(fds, 1, 3500);
+      if (time == 0){
+        printf("TIMEOUT!\n");
+        return 0;
+      }else {
+        string = recebe_protocolo(socket);
+        //printf( "chegando %s\n",string);
+        p2 = abre_protocolo(string);
+        if (p2 -> tipo == 8) {
+          printf("ACK DO CLIENTE\n");
+        }else if (p2->tipo == 9) {
+          envia_protocolo(string, socket);
+        }
+      }
+    }
+
+}
+  printf("ACABOU\n");
+  p1 = protocolo_server("",13, 0, 0);
+  string = protocolo_string(p1);
+  printf("%s\n", string);
+  envia_protocolo(string, socket);
 
 
+  fds[0].fd = socket;
+  fds[0].events = 0;
+  fds[0].events |= POLLIN;
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("FIM: TIMEOUT!\n");
+    return 0;
+  }else {
+    string = recebe_protocolo(socket);
+    printf( "chegando %s\n",string);
+    p2 = abre_protocolo(string);
+    if (p2 -> tipo == 8) {
+      printf("ACK DO CLIENTE\n");
+    }else if (p2->tipo == 9) {
+      envia_protocolo(string, socket);
     }
   }
-
-  p1 = protocolo_server("", 1101, 0, 0);
-  string = protocolo_string(p1);
-  envia_protocolo(string, socket);
 
 }
 
