@@ -273,7 +273,7 @@ int client_LINHAS(linha_comando *entrada, int socket){
 
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
-        //printf("%s\n", string);
+     //printf("%s\n", string);
         p1 = abre_protocolo(string);
        printf("%s", p1->dados);
         if (p1-> tipo == 6) {
@@ -369,7 +369,7 @@ int client_LINHA(linha_comando *entrada, int socket) {
 
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
-        //printf("%s\n", string);
+        // printf("%s\n", string);
         p1 = abre_protocolo(string);
        printf("%s", p1->dados);
         if (p1-> tipo == 6) {

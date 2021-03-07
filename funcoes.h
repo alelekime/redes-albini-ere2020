@@ -85,6 +85,7 @@ void client_VER(linha_comando *entrada, int socket);
 bool recebe_ls(estrutura_pacote * p1, int socket);
 int split_string(char *string,int cont, int tam, int socket);
 //char *protocolo_string_server(estrutura_pacote * p1);//
+int strlcpy(char *dst, const char *src, size_t siz);
 int acha_binario(int tam) ;
 char * convert_binary(int dec, char *output);
 int client_LINHA(linha_comando *entrada, int socket) ;
