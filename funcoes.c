@@ -276,14 +276,17 @@ int client_LINHAS(linha_comando *entrada, int socket){
      //printf("%s\n", string);
         p1 = abre_protocolo(string);
        printf("%s", p1->dados);
-        if (p1-> tipo == 6) {
-          printf("ESCOLHA OUTRA LINHA\n");
-          break;
-        }else if (p1 -> tipo == 13) {
+        if (p1 -> tipo == 13) {
           printf("\nACABOU A TRANSMISSAO\n");
           break;
-        }else if (p1 -> tipo == 15) {
-            printf("\nERRO ENCONTRADO %s\n%d NÃO EXISTE ESSA LINHA \n",p1->dados, entrada->linha);
+        }else if (p1 -> tipo == 15 && !(strcmp(p1->dados, "3")) )  {
+            printf("\nERRO ENCONTRADO NO ARQUIVO\n");
+            break;
+        }else if (p1 -> tipo == 15 && !(strcmp(p1->dados, "4")) )  {
+            printf("\nERRO ENCONTRADO %s\n NÃO EXISTE ESSA LINHA \n",p1->dados);
+            break;
+        }else  if (p1 -> tipo == 15 && !(strcmp(p1->dados, "5")) )  {
+            printf("\nERRO ENCONTRADO, LINHA FINAL MENOR QUE A INICIAL\n");
             break;
         }
       }

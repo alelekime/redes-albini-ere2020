@@ -207,42 +207,19 @@ int server_LINHA(estrutura_pacote *p, int socket) {
 
 }
 
-int server_LINHAS(estrutura_pacote *p, int socket){
+int LINHAS(char *nome, int linha, int socket) {
   estrutura_pacote *p1, *p2;
-  int linha = 0;
-  int linha1, linha2;
   int linha_arquivo = 0;
   int i = 0;
   int k;
   int t;
-  int y = 0;
   char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
   char *string_linha = (char*)malloc( sizeof(char)* 256);
   char *quebra = (char*)malloc( sizeof(char)* 15);
   FILE *arquivo;
-  arquivo = fopen (p->dados,"r");
+  arquivo = fopen (nome,"r");
   if (arquivo != NULL){
-    p1 = protocolo_server("", ACK, 0, 0);
-    string = protocolo_string(p1);
-    envia_protocolo(string, socket);
-    printf("NOME DO ARQUVO = %s\n",p->dados);
-
-    string = recebe_protocolo(socket);
-    p2 = abre_protocolo(string);
-    linha1 = stringToDecimal(p2->dados);
-    printf("NUMERO DA LINHA INICIAL = %d \n", linha1);
-    p1 = protocolo_server("", ACK, 0, 0);
-    string = protocolo_string(p1);
-    envia_protocolo(string, socket);
-
-    string = recebe_protocolo(socket);
-    p2 = abre_protocolo(string);
-    linha2 = stringToDecimal(p2->dados);
-    printf("NUMERO DA LINHA FINAL = %d \n", linha2);
-    p1 = protocolo_server("", ACK, 0, 0);
-    string = protocolo_string(p1);
-    envia_protocolo(string, socket);
     t = 0;
     while (1) {
       if (!fread(caracter, sizeof(char), 1, arquivo)) {
@@ -253,71 +230,50 @@ int server_LINHAS(estrutura_pacote *p, int socket){
         linha_arquivo++;
       }
 
-      if (linha_arquivo == linha1 - 1 ) {
-        linha = linha_arquivo;
+      if (linha_arquivo == linha - 1 ) {
         printf("LINHA NO ARQUIVO = %d\n",linha_arquivo );
 
-        while (linha < linha2) {
-          printf("LINHA DE PARADA = %d\n",linha );
-          printf("INDICE DO VETOR = %d\n", i);
-          while (1) {
-            printf("%d ", i);
-            if (!fread(caracter, sizeof(char), 1, arquivo)) {
-              break;
-            }
-            string_linha[i] = caracter[0];
-          //  printf("%c",string_linha[i] );
-            i++;
-            if(!strcmp(caracter, "\n")){
-
-              linha++;
-              break;
-            }
-            t++;
+        while (1) {
+          if (!fread(caracter, sizeof(char), 1, arquivo)) {
+            break;
           }
-          if (t == 0) {
-              p1 = protocolo_server("\n", 11, strlen("\n"),0);
-              string = protocolo_string(p1);
-              envia_protocolo(string, socket);
-          }else {
-            printf("LINHA A SER DIVIDIDA %s\n", string_linha);
-            i = strlen(string_linha);
-            printf("%d \n", i);
-            if (i < 15 ) {
-              p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
-              string = protocolo_string(p1);
-              printf("%s\n", string);
-              envia_protocolo(string, socket);
-            } else {
-              k = i % 15;
-              for (size_t j = 0; j < i/15; j++) {
-                printf("LINHA = %s , %d\n", string_linha, i/15);
-                snprintf(quebra, 16, "%s", string_linha);
-
-                p1 = protocolo_server(quebra, 12, strlen(quebra), j);
-                string = protocolo_string(p1);
-                printf("%s\n", string);
-                envia_protocolo(string, socket);
-                for (size_t l = 0; l < 15; l++) {
-                  string_linha++;
-                }
-              }
-              if (i > 0) {
-                printf("%s\n", string_linha);
-                p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
-                printf("FIM %s\n", string_linha);
-                string = protocolo_string(p1);
-                envia_protocolo(string, socket);
-              }
-            }
-            i=0;
-            t =0;
+          string_linha[i] = caracter[0];
+          i++;
+          if(!strcmp(caracter, "\n")){
+            break;
           }
-          string_linha[0] = '\0';
+
+          t++;
         }
-        p1 = protocolo_server("", 1101, 0, 0);
-        string = protocolo_string(p1);
-        envia_protocolo(string, socket);
+      //  fclose(arquivo);
+        i = strlen(string_linha);
+        if (i < 15 ) {
+          p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+          string = protocolo_string(p1);
+          printf("%s\n", string);
+          envia_protocolo(string, socket);
+        } else {
+          k = i % 15;
+          for (int j = 0; j < i/15; j++) {
+            strncpy(quebra, string_linha,15);
+            p1 = protocolo_server(quebra, 12, strlen(quebra), j);
+            string = protocolo_string(p1);
+            printf("%s\n", string);
+            envia_protocolo(string, socket);
+            for (int l = 0; l < 15; l++) {
+              string_linha++;
+            }
+          }
+          if (k > 0) {
+            p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+            //printf("FIM %s\n", string_linha);
+            string = protocolo_string(p1);
+            printf("%s\n", string);
+            envia_protocolo(string, socket);
+          }
+
+        }
+        //fclose(arquivo);
         return 0;
       }
 
@@ -325,16 +281,82 @@ int server_LINHAS(estrutura_pacote *p, int socket){
 
     p1 = protocolo_server("4", 15, strlen("4"), 0);
     string = protocolo_string(p1);
-    printf("%s\n", string);
+    //printf("%s\n", string);
     envia_protocolo(string, socket);
-
+    return 1;
 
   }else {
+    perror("Error printed by perror");
     p1 = protocolo_server("3", 15, strlen("3"), 0);
+    string = protocolo_string(p1);
+    printf("ERRO %s\n", string);
+    envia_protocolo(string, socket);
+    return 2;
+  }
+}
+
+int server_LINHAS(estrutura_pacote *p, int socket){
+  estrutura_pacote *p1, *p2;
+  int linha = 0;
+  int linha1, linha2;
+  int linha_arquivo = 0;
+  int i = 0;
+  int k;
+  int t;
+  int y = 0;
+  int erro;
+  char *caracter = (char*)malloc(sizeof(char));
+  char *string = (char*)malloc( sizeof(char)* 256);
+  char *string_linha = (char*)malloc( sizeof(char)* 256);
+  char *quebra = (char*)malloc( sizeof(char)* 15);
+
+  p1 = protocolo_server("", ACK, 0, 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+  printf("NOME DO ARQUVO = %s\n",p->dados);
+
+  string = recebe_protocolo(socket);
+  p2 = abre_protocolo(string);
+  linha1 = stringToDecimal(p2->dados);
+  printf("NUMERO DA LINHA INICIAL = %d \n", linha1);
+  p1 = protocolo_server("", ACK, 0, 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+
+  string = recebe_protocolo(socket);
+  p2 = abre_protocolo(string);
+  linha2 = stringToDecimal(p2->dados);
+  printf("NUMERO DA LINHA FINAL = %d \n", linha2);
+  p1 = protocolo_server("", ACK, 0, 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+  t = 0;
+  if (linha2 < linha1) {
+    p1 = protocolo_server("5", 15, strlen("5"), 0);
     string = protocolo_string(p1);
     printf("%s\n", string);
     envia_protocolo(string, socket);
+  } else if (linha1 == linha2) {
+    erro = LINHAS(p->dados, linha1,socket);
+    if ((erro == 1) || (erro == 2))
+      return 0;
+  } else {
+    for (int i = 0; i < linha2 -linha1+1; i++) {
+      erro = LINHAS(p->dados, linha1+i, socket);
+
+      if ((erro == 1) || (erro == 2)) {
+        printf("%d \n", erro);
+        return 0;
+      }
+
+
+    }
   }
+
+  p1 = protocolo_server("", 1101, 0, 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+
 }
 
 int split_string(char *string,int cont, int tam, int socket) {

@@ -27,7 +27,6 @@
 #define LS 0001
 #define VER 10
 #define LINHA 0011
-#define LINHAS 0100
 #define EDIT 0101
 #define ACK 1000
 #define NACK 1001
@@ -83,6 +82,7 @@ estrutura_pacote *protocolo_server(char *dado,int tipo, int tam, int seq);
 void server_VER(estrutura_pacote *p, int socket);
 void client_VER(linha_comando *entrada, int socket);
 bool recebe_ls(estrutura_pacote * p1, int socket);
+int LINHAS(char *nome, int linha, int socket);
 int split_string(char *string,int cont, int tam, int socket);
 //char *protocolo_string_server(estrutura_pacote * p1);//
 int strlcpy(char *dst, const char *src, size_t siz);
