@@ -169,6 +169,101 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
   return p;
 }
 
+int client_EDIT(linha_comando *entrada, int socket){
+  int i,k;
+  int fd = 0;
+  int time;
+  struct pollfd fds[1];
+  char *linha = malloc( sizeof(int));
+  char *saida = (char*)malloc( sizeof(char)* 256);
+  char *string = (char*)malloc( sizeof(char)* 256);
+  char *quebra = (char*)malloc( sizeof(char)* 256);
+  estrutura_pacote *p1, *p;
+
+  p1 = protocolo(entrada -> nome_arq,5, strlen(entrada-> nome_arq), 0);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+
+  fds[0].fd = socket;
+  fds[0].events = 0;
+  fds[0].events |= POLLIN;
+
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  } else {
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("ACK = RECEBEU O NOME DO ARQUIVO \n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 15 ) {
+          printf("\nERRO ENCONTRADO%s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
+          return 0;
+        }
+        break;
+      }
+    }
+  }
+  snprintf(linha, 10, "%d",entrada -> linha);
+  p1 = protocolo_server(linha,5, strlen(linha), 1);
+  string = protocolo_string(p1);
+  envia_protocolo(string, socket);
+  time = poll(fds, 1, 3500);
+  if (time == 0){
+    printf("TIMEOUT!\n");
+    return 0;
+  }else {
+    while (1) {
+      string = recebe_protocolo(socket);
+      if (strlen(string) > 5){
+        p1 = abre_protocolo(string);
+        if (p1 -> tipo == 8) {
+          printf("ACK = RECEBEU O NUMERO DA LINHA\n");
+        }else if (p1 -> tipo == 9) {
+          printf("\nNACK\n");
+        } else if (p1 -> tipo == 15) {
+            printf("\nERRO ENCONTRADO %s\n%sNÃO EXISTE ESSE ARQUIVO \n",p1->dados, entrada->nome_arq);
+        }
+        break;
+      }
+    }
+  }
+
+  i= strlen(entrada->dados)
+  if (i > 15) {
+    k = i % 15;
+    for (int j = 0; j < i/15; j++) {
+      strncpy(quebra, entrada->dados,15);
+      printf("QUEBRA %s\n", quebra);
+      p1 = protocolo_server(quebra, 12, strlen(quebra), j);
+      string = protocolo_string(p1);
+      envia_protocolo(string, socket);
+      for (int l = 0; l < 15; l++) {
+        entrada->dados++;
+      }
+    }
+    if (k > 0) {
+      p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
+      printf("FIM %s\n", string_linha);
+      string = protocolo_string(p1);
+      envia_protocolo(string, socket);
+    }
+    p1 = protocolo_server("", 1101, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+  } else {
+    p1 = protocolo(entrada -> dados,5, strlen(entrada-> dados), 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+  }
+
+}
+
 int client_LINHAS(linha_comando *entrada, int socket){
   int fd = 0;
   int time;
@@ -602,7 +697,7 @@ void le_comando( linha_comando *entrada, int socket) {
     entrada-> nome_arq = quebra;
     quebra =  strdup(strtok(NULL, ""));//“<NOVO_TEXTO>”
     entrada->dados = quebra;
-    //client_EDIT();// troca a linha escolhida por um texto
+    client_EDIT(entrada, socket);// troca a linha escolhida por um texto
   }
 
 }
