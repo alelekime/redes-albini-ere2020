@@ -1,113 +1,5 @@
 #include "funcoes.h"
 
-void server_EDIT(estrutura_pacote *p, int socket){
-  estrutura_pacote *p1, *p2;
-  int linha;
-  int linha_arquivo = 0;
-  int i = 0;
-  int k;
-  int t;
-  bool final_da_linha = false;
-  char *caracter = (char*)malloc(sizeof(char));
-  char *string = (char*)malloc( sizeof(char)* 256);
-  char *string_linha = (char*)malloc( sizeof(char)* 256);
-  char *quebra = (char*)malloc( sizeof(char)* 15);
-  FILE *arquivo;
-  arquivo = fopen (p->dados,"r");
-  if (arquivo != NULL){
-    p1 = protocolo_server("", ACK, 0, 0);
-    string = protocolo_string(p1);
-    envia_protocolo(string, socket);
-    printf("NOME DO ARQUVO = %s\n",p->dados);
-    string = recebe_protocolo(socket);
-    p2 = abre_protocolo(string);
-    linha = stringToDecimal(p2->dados);
-    printf("NUMERO DA LINHA = %d \n", linha);
-    p1 = protocolo_server("", ACK, 0, 0);
-    string = protocolo_string(p1);
-    envia_protocolo(string, socket);
-    t = 0;
-    while (1) {
-      if (!fread(caracter, sizeof(char), 1, arquivo)) {
-        break;
-      }
-    //  printf("%s", caracter);
-      if (!strcmp(caracter, "\n")) {
-        linha_arquivo++;
-      }
-
-      if (linha_arquivo == linha - 1 ) {
-        printf("LINHA NO ARQUIVO = %d\n",linha_arquivo );
-
-        while (1) {
-          if (!fread(caracter, sizeof(char), 1, arquivo)) {
-            break;
-          }
-
-          printf("%s\n",caracter );
-          if(!strcmp(caracter, "\n")){
-            if (t == 0) {
-              p1 = protocolo_server("", 6, strlen(""), 0);
-              printf("PULA LINHA");
-              string = protocolo_string(p1);
-              envia_protocolo(string, socket);
-              p1 = protocolo_server("", 1101, 0, 0);
-              string = protocolo_string(p1);
-              envia_protocolo(string, socket);
-              return 0;
-            }
-            break;
-          }
-          string_linha[i] = caracter[0];
-          i++;
-          t++;
-        }
-        i = strlen(string_linha);
-        if (i < 15 ) {
-          p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
-          string = protocolo_string(p1);
-          envia_protocolo(string, socket);
-        } else {
-          k = i % 15;
-          for (int j = 0; j < i/15; j++) {
-            strncpy(quebra, string_linha,15);
-            printf("QUEBRA %s\n", quebra);
-            p1 = protocolo_server(quebra, 12, strlen(quebra), j);
-            string = protocolo_string(p1);
-            envia_protocolo(string, socket);
-            for (int l = 0; l < 15; l++) {
-              string_linha++;
-            }
-          }
-          if (k > 0) {
-            p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
-            printf("FIM %s\n", string_linha);
-            string = protocolo_string(p1);
-            envia_protocolo(string, socket);
-          }
-          p1 = protocolo_server("", 1101, 0, 0);
-          string = protocolo_string(p1);
-          envia_protocolo(string, socket);
-
-        }
-        return 0;
-      }
-
-    }
-
-    p1 = protocolo_server("4", 15, strlen("4"), 0);
-    string = protocolo_string(p1);
-    printf("%s\n", string);
-    envia_protocolo(string, socket);
-
-
-  }else {
-    p1 = protocolo_server("3", 15, strlen("3"), 0);
-    string = protocolo_string(p1);
-    printf("%s\n", string);
-    envia_protocolo(string, socket);
-  }
-}
 
 void server_CD(estrutura_pacote *p, int socket) {
   char *novo = (char*)malloc(sizeof(char) * 15);
@@ -748,7 +640,7 @@ void funcoes_server(int socket_confirmado) {
           server_LINHAS(p, socket_confirmado);
           break;
         case 5:     //EDIT
-        server_EDIT(p, socket_confirmado);
+        //server_EDIT(p, socket_confirmado);
 
           break;
         default:
