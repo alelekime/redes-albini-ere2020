@@ -97,6 +97,105 @@ void server_VER(estrutura_pacote *p, int socket) {
 
 }
 
+int server_EDIT(estrutura_pacote *p, int socket) {
+  int fd = 0;
+  int time;
+  struct pollfd fds[1];
+  estrutura_pacote *p1, *p2;
+  int linha;
+  int linha_arquivo = 0;
+  int i = 0;
+  int k;
+  int t;
+  bool final_da_linha = false;
+  char *caracter = (char*)malloc(sizeof(char));
+  char *string = (char*)malloc( sizeof(char)* 256);
+  char *string_linha = (char*)malloc( sizeof(char)* 256);
+  char *quebra = (char*)malloc( sizeof(char)* 15);
+  FILE *arquivo;
+  FILE *aux;
+  arquivo = fopen (p->dados,"r");
+  aux = fopen ("d.txt","a + b");
+
+
+  if ((arquivo != NULL) && (aux != NULL)){
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+    printf("NOME DO ARQUVO = %s\n",p->dados);
+    string = recebe_protocolo(socket);
+    p2 = abre_protocolo(string);
+    linha = stringToDecimal(p2->dados);
+    printf("NUMERO DA LINHA = %d \n", linha);
+    p1 = protocolo_server("", ACK, 0, 0);
+    string = protocolo_string(p1);
+    envia_protocolo(string, socket);
+    t = 0;
+    printf("DADO = ");
+    while (1) {
+      if (!fread(caracter, 1, sizeof(char), arquivo)) {
+        break;
+      }
+      fprintf(aux, "%s",caracter);
+      if (!fwrite(caracter, 1, sizeof(char),aux)) {
+        printf("ERRO\n");
+        break;
+      }
+      printf("%s", caracter);
+      if (!strcmp(caracter, "\n")) {
+        linha_arquivo++;
+      }
+
+      if (linha_arquivo == linha - 1 ) {
+        printf("%d\n",linha_arquivo);
+        while (1){
+
+          fds[0].fd = socket;
+          fds[0].events = 0;
+          fds[0].events |= POLLIN;
+          time = poll(fds, 1, 3500);
+          if (time == 0){
+            printf("TIMEOUT!\n");
+            return 0;
+          }else {
+
+            string = recebe_protocolo(socket);
+            if (strlen(string) > 5){
+              printf("%s\n", string);
+              p1 = abre_protocolo(string);
+             printf("%s", p1->dados);
+             //fprintf(aux, "%s",p1->dados);
+
+             if (!fwrite(p1->dados, 1, sizeof(p1->dados),aux)) {
+               printf("ERRO\n");
+               return 0;
+             }
+             printf("%d \n", p1->tipo);
+              if (p1 -> tipo == 13) {
+                printf("\nACABOU A TRANSMISSAO\n");
+                break;
+              }
+              p1 = protocolo_server("", ACK, 0, 0);
+              string = protocolo_string(p1);
+              envia_protocolo(string, socket);
+            }
+          }
+        }
+      }
+    }
+
+
+
+  }else {
+    p1 = protocolo_server("3", 15, strlen("3"), 0);
+    string = protocolo_string(p1);
+    printf("%s\n", string);
+    envia_protocolo(string, socket);
+  }
+
+  return 0;
+}
+
 int server_LINHA(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int linha;
@@ -640,7 +739,7 @@ void funcoes_server(int socket_confirmado) {
           server_LINHAS(p, socket_confirmado);
           break;
         case 5:     //EDIT
-        //server_EDIT(p, socket_confirmado);
+        server_EDIT(p, socket_confirmado);
 
           break;
         default:
