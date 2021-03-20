@@ -104,9 +104,8 @@ int server_EDIT(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
   int linha;
   int linha_arquivo = 0;
-  int i = 0;
-  int k;
-  int t;
+  int i, tam = 0;
+  int k,t;
   bool final_da_linha = false;
   char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
@@ -115,7 +114,8 @@ int server_EDIT(estrutura_pacote *p, int socket) {
   FILE *arquivo;
   FILE *aux;
   arquivo = fopen (p->dados,"r");
-  aux = fopen ("d.txt","a + b");
+  chmod("aux.txt", S_IRUSR|S_IRGRP|S_IROTH);
+  aux = fopen("aux.txt","wb");
 
 
   if ((arquivo != NULL) && (aux != NULL)){
@@ -136,18 +136,20 @@ int server_EDIT(estrutura_pacote *p, int socket) {
       if (!fread(caracter, 1, sizeof(char), arquivo)) {
         break;
       }
-      fprintf(aux, "%s",caracter);
+      printf("%s", caracter);
       if (!fwrite(caracter, 1, sizeof(char),aux)) {
-        printf("ERRO\n");
+        printf("ERRO1\n");
+        perror("erro");
         break;
       }
-      printf("%s", caracter);
+
       if (!strcmp(caracter, "\n")) {
         linha_arquivo++;
       }
 
-      if (linha_arquivo == linha - 1 ) {
-        printf("%d\n",linha_arquivo);
+    //  printf("linha arquivo %d , linha %d \n",linha_arquivo, (linha) );
+     if (linha_arquivo == linha - 1 ) {
+        printf("LINHA ==== %d\n",linha_arquivo);
         while (1){
 
           fds[0].fd = socket;
@@ -161,31 +163,46 @@ int server_EDIT(estrutura_pacote *p, int socket) {
 
             string = recebe_protocolo(socket);
             if (strlen(string) > 5){
-              printf("%s\n", string);
+              //printf("%s\n", string);
               p1 = abre_protocolo(string);
-             printf("%s", p1->dados);
-             //fprintf(aux, "%s",p1->dados);
-
-             if (!fwrite(p1->dados, 1, sizeof(p1->dados),aux)) {
-               printf("ERRO\n");
-               return 0;
-             }
-             printf("%d \n", p1->tipo);
+              printf("%d\n", p1->tipo);
               if (p1 -> tipo == 13) {
                 printf("\nACABOU A TRANSMISSAO\n");
                 break;
               }
+              printf("%s", p1->dados);
+              tam = tam + strlen(p1->dados);
+              //fprintf(aux, "%s",p1->dados);
+
+              if (!fwrite(p1->dados, 1, sizeof(p1->dados),aux)) {
+                printf("ERRO2\n");
+                perror("erro");
+                return 0;
+              }
+
               p1 = protocolo_server("", ACK, 0, 0);
               string = protocolo_string(p1);
               envia_protocolo(string, socket);
             }
           }
         }
+        printf("tamanho %d\n",tam );
+        while (1) {
+          if (!fread(caracter, 1, sizeof(char), arquivo)) {
+            break;
+          }
+          //printf("***************************%s\n",caracter );
+          if (!strcmp(caracter, "\n")) {
+            fwrite(caracter, 1, sizeof(char),aux);
+            break;
+          }
+        }
+        linha_arquivo++;
       }
     }
 
 
-
+fclose(aux);
   }else {
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
