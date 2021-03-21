@@ -6,6 +6,7 @@ void server_CD(estrutura_pacote *p, int socket) {
   strncpy(novo, p-> dados, p->tamanho);
   char *string = (char*)malloc( sizeof(char)* 256);
   int tam;
+  verifica(p);
   estrutura_pacote *p1;
   tam = p-> tamanho;
   printf("%d\n", tam);
@@ -97,6 +98,7 @@ void server_VER(estrutura_pacote *p, int socket) {
 
 }
 
+
 int server_EDIT(estrutura_pacote *p, int socket) {
   int fd = 0;
   int time;
@@ -172,14 +174,13 @@ int server_EDIT(estrutura_pacote *p, int socket) {
               }
               printf("%s", p1->dados);
               tam = tam + strlen(p1->dados);
-              //fprintf(aux, "%s",p1->dados);
-
-              if (!fwrite(p1->dados, 1, sizeof(p1->dados),aux)) {
-                printf("ERRO2\n");
-                perror("erro");
-                return 0;
-              }
-
+              fprintf(aux, "%s",p1->dados);
+              // if (!fwrite(p1->dados, 1, sizeof(p1->dados),aux)) {
+              //   printf("ERRO2\n");
+              //   perror("erro");
+              //   return 0;
+              // }
+              fseek(aux, 0, SEEK_END);
               p1 = protocolo_server("", ACK, 0, 0);
               string = protocolo_string(p1);
               envia_protocolo(string, socket);
@@ -193,7 +194,6 @@ int server_EDIT(estrutura_pacote *p, int socket) {
           }
           //printf("***************************%s\n",caracter );
           if (!strcmp(caracter, "\n")) {
-            fwrite(caracter, 1, sizeof(char),aux);
             break;
           }
         }

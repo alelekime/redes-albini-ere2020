@@ -22,7 +22,7 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
         p1 -> tamanho = tam -1 ;
       }
   }
-  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
+  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado, p1-> endereco_origem, p1->endereco_destino);
   return p1;
 }
 
@@ -39,7 +39,8 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
   p1 -> tipo = tipo;
   //printf("erro %s\n", int2bin(p1-> tamanho, 4));
   p1-> dados = dado;
-  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado);
+  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado, p1-> endereco_origem, p1->endereco_destino);
+
 //  mostra_protocolo(p1);
   //printf("TAMANHO DO DADO NA FUNCAO CONVERT BINARIO %s\n",  convert_binary(p1 -> tamanho, binary));
   return p1;
@@ -612,11 +613,14 @@ void client_VER(linha_comando *entrada, int socket) {
       }
       p = protocolo_server("", 8, 0, 0);
       saida = protocolo_string(p);
+      printf("%s\n", saida);
+
       envia_protocolo(saida, socket);
     }
   }
   p = protocolo_server("", 8, 0, 0);
   saida = protocolo_string(p);
+  printf("%s\n", saida);
   envia_protocolo(saida, socket);
 }
 
@@ -641,9 +645,8 @@ void client_CD(linha_comando *entrada, int socket) {
       string = recebe_protocolo(socket);
       if (strlen(string) > 5) {
       p1 = abre_protocolo(string);
+      verifica(p1);
       printf("%s\n",string);
-      if(!strcmp(p1-> endereco_origem, "01"))
-        break;
       }
     }
   }

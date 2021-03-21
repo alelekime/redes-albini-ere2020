@@ -23,6 +23,15 @@ int convert(long long n) {
     return dec;
 }
 
+int verifica(estrutura_pacote *p) {
+  int p_origem, p_destino;//origem == chegando do servidor; destino == pariedade atual
+  p_origem = p-> pariedade;
+  p_destino = cal_pariedade(p-> tamanho, p-> sequencia, p->tipo, p->dados, p-> endereco_origem, p->endereco_destino);
+
+  printf("%d, %d\n",p_origem,p_destino );
+
+  return 0;
+}
 
 int stringToDecimal(char * str){
     int result =0;
@@ -87,33 +96,10 @@ int acha_binario(int tam) {
   }
   return tam;
 }
-int strlcpy(char *dst, const char *src, size_t siz)
-{
-    char *d = dst;
-    const char *s = src;
-    size_t n = siz;
-
-    /* Copy as many bytes as will fit */
-    if (n != 0) {
-        while (--n != 0) {
-            if ((*d++ = *s++) == '\0')
-                break;
-        }
-    }
-
-    /* Not enough room in dst, add NUL and traverse rest of src */
-    if (n == 0) {
-        if (siz != 0)
-            *d = '\0';      /* NUL-terminate dst */
-        while (*s++)
-            ;
-    }
-
-    return(s - src);    /* count does not include NUL */
-}
 
 
-int cal_pariedade(int tam, int seq, int tipo, char *dado) {
+
+int cal_pariedade(int tam, int seq, int tipo, char *dado, char *endereco_origem, char*endereco_destino) {
   int par = 0;
   int binary;
   int soma = tam + seq + tipo;
@@ -122,6 +108,14 @@ int cal_pariedade(int tam, int seq, int tipo, char *dado) {
       soma = soma / 10;
   }
   int tamanho =  strlen(dado);
+  for(int i = 0; i < 2; i++){
+      par = par ^ *endereco_origem;
+      *endereco_origem++;
+  }
+  for(int i = 0; i < 2; i++){
+      par = par ^ *endereco_destino;
+      *endereco_destino++;
+  }
   for(int i = 0; i < tamanho; i++){
       par = par ^ *dado;
       *dado++;
