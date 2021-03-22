@@ -5,9 +5,7 @@ void server_CD(estrutura_pacote *p, int socket) {
   char *novo = (char*)malloc(sizeof(char) * 15);
   strncpy(novo, p-> dados, p->tamanho);
   char *string = (char*)malloc( sizeof(char)* 256);
-  int tam;
   estrutura_pacote *p1;
-  tam = p-> tamanho;
   if (chdir(novo) == 0) {
 
     p1 = protocolo_server("", ACK, 0, 0);
@@ -25,7 +23,7 @@ void server_CD(estrutura_pacote *p, int socket) {
 
 void server_VER(estrutura_pacote *p, int socket) {
   estrutura_pacote *p1, *p2;
-  int fd = 0;
+
   struct pollfd fds[1];
   int seq = 0;
   int time ;
@@ -52,14 +50,10 @@ void server_VER(estrutura_pacote *p, int socket) {
         break;
       } else {
         entrada = recebe_protocolo(socket);
-        printf("%s\n", entrada);
         p2 = abre_protocolo(entrada);
-        printf("%d\n", p2->tipo);
         if (p2-> tipo == 15) {
           printf("ERRO, REENVIANDO\n");
           envia_protocolo(string, socket);
-        } else {
-          printf("ACK DO CLIENTE\n");
         }
         seq++;
       }
@@ -96,19 +90,16 @@ void server_VER(estrutura_pacote *p, int socket) {
 
 
 int server_EDIT(estrutura_pacote *p, int socket) {
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   estrutura_pacote *p1, *p2;
   int linha;
   int linha_arquivo = 0;
-  int i, tam = 0;
-  int k,t;
-  bool final_da_linha = false;
+  int tam = 0;
+  int t = 0;
   char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
-  char *string_linha = (char*)malloc( sizeof(char)* 256);
-  char *quebra = (char*)malloc( sizeof(char)* 15);
   FILE *arquivo;
   FILE *aux;
   arquivo = fopen (p->dados,"r");
@@ -132,6 +123,12 @@ int server_EDIT(estrutura_pacote *p, int socket) {
     printf("DADO = ");
     while (1) {
       if (!fread(caracter, 1, sizeof(char), arquivo)) {
+        if (linha_arquivo < linha -1) {
+          p1 = protocolo_server("5", 15, strlen("5"), 0);
+          string = protocolo_string(p1);
+          printf("ERRO - ENVIANDO NACK %s\n", string);
+          envia_protocolo(string, socket);
+        }
         break;
       }
       printf("%s", caracter);
@@ -187,9 +184,10 @@ int server_EDIT(estrutura_pacote *p, int socket) {
         linha_arquivo++;
       }
     }
+    fclose(aux);
+    remove(p->dados);
+    rename("aux.txt", p->dados);
 
-
-fclose(aux);
   }else {
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
@@ -201,7 +199,7 @@ fclose(aux);
 }
 
 int server_LINHA(estrutura_pacote *p, int socket) {
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   estrutura_pacote *p1, *p2;
@@ -210,7 +208,6 @@ int server_LINHA(estrutura_pacote *p, int socket) {
   int i = 0;
   int k;
   int t;
-  bool final_da_linha = false;
   char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
   char *string_linha = (char*)malloc( sizeof(char)* 256);
@@ -386,7 +383,7 @@ int server_LINHA(estrutura_pacote *p, int socket) {
 }
 
 int LINHAS(FILE *arquivo, int linha, int socket) {
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   estrutura_pacote *p1, *p2;
@@ -530,22 +527,15 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
 }
 
 int server_LINHAS(estrutura_pacote *p, int socket){
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
-  estrutura_pacote *p1, *p2, *p3;
-  int linha = 0;
+  estrutura_pacote *p1, *p2;
   int linha1, linha2;
   int linha_arquivo = 0;
-  int i = 0;
-  int k;
-  int t;
-  int y = 0;
+  int t = 0;
   int erro;
-  char *caracter = (char*)malloc(sizeof(char));
   char *string = (char*)malloc( sizeof(char)* 256);
-  char *string_linha = (char*)malloc( sizeof(char)* 256);
-  char *quebra = (char*)malloc( sizeof(char)* 15);
 
   p1 = protocolo_server("", ACK, 0, 0);
   string = protocolo_string(p1);
@@ -703,7 +693,7 @@ int server_LS(estrutura_pacote *p, int socket) {
 
   if (dr == NULL)
       printf("ERRO" );
-  else
+  else{
     while ((de = readdir(dr)) != NULL){
       fds[0].fd = socket;
       fds[0].events = 0;
@@ -747,6 +737,7 @@ int server_LS(estrutura_pacote *p, int socket) {
         ultima = recebe_protocolo(socket);
       }
     }
+  }
     p1 = protocolo_server("", 1101, 0, cont);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
@@ -781,8 +772,6 @@ void funcoes_server(int socket_confirmado) {
 
     entrada_server = recebe_protocolo(socket_confirmado);
     if (strlen(entrada_server) > 5) {
-      imprime_path();
-      printf(" PACOTE RECEBIDO = %s\n",entrada_server );
       estrutura_pacote *p = abre_protocolo(entrada_server);
 
       switch (p -> tipo) {
@@ -806,7 +795,6 @@ void funcoes_server(int socket_confirmado) {
           break;
 
       }
-      imprime_path();
     }
   }
 }

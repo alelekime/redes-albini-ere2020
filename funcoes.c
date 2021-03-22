@@ -26,8 +26,6 @@ estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
 
 estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
-  char *binary = (char*)malloc( sizeof(char)* 4);
-
   p1 -> marcador = "01111110";
   p1 -> tamanho = acha_binario(tam);
   p1 -> endereco_origem = "01";
@@ -42,7 +40,6 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
 
 estrutura_pacote *protocolo_client(char *dado, int tipo, int tam, int seq) {
   estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
-  char *binary = (char*)malloc( sizeof(char)* 4);
 
   p1 -> marcador = "01111110";
   p1 -> tamanho = acha_binario(tam);
@@ -172,7 +169,7 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
 }
 
 int client_EDIT(linha_comando *entrada, int socket){
-  int fd = 0;
+
   int time;
   int i = 0;
   int k;
@@ -180,7 +177,7 @@ int client_EDIT(linha_comando *entrada, int socket){
   char *linha = malloc( sizeof(int));
   char *quebra = (char*)malloc( sizeof(char)* 15);
   char *string = (char*)malloc( sizeof(char)* 256);
-  estrutura_pacote *p1, *p, *p2;
+  estrutura_pacote *p1, *p2;
   p1 = protocolo_client(entrada -> nome_arq,5, strlen(entrada-> nome_arq), 0);
 
 
@@ -260,6 +257,9 @@ int client_EDIT(linha_comando *entrada, int socket){
         printf("ACK DO CLIENTE\n");
       }else if (p2->tipo == 9) {
         envia_protocolo(string, socket);
+      }else if (p2 -> tipo == 15) {
+        printf("\nERRO ENCONTRADO %d NÃO EXISTE ESSA LINHA \n", entrada->linha);
+        return 0;
       }
     }
   } else {
@@ -281,7 +281,6 @@ int client_EDIT(linha_comando *entrada, int socket){
       }else {
         string = recebe_protocolo(socket);
         p2 = abre_protocolo(string);
-
         if (p2 -> tipo == 8) {
           printf("ACK DO CLIENTE\n");
         }else if (p2->tipo == 9) {
@@ -322,17 +321,16 @@ int client_EDIT(linha_comando *entrada, int socket){
   string = protocolo_string(p1);
   printf("%s\n", string);
   envia_protocolo(string, socket);
-
+  return 1;
 }
 
 int client_LINHAS(linha_comando *entrada, int socket){
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   char *linha = malloc( sizeof(int));
-  char *saida = (char*)malloc( sizeof(char)* 256);
   char *string = (char*)malloc( sizeof(char)* 256);
-  estrutura_pacote *p2,*p1, *p;
+  estrutura_pacote *p2,*p1;
 
   p1 = protocolo(entrada -> nome_arq,4, strlen(entrada-> nome_arq), 0);
   string = protocolo_string(p1);
@@ -467,11 +465,10 @@ int client_LINHAS(linha_comando *entrada, int socket){
 }
 
 int client_LINHA(linha_comando *entrada, int socket) {
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   char *linha = malloc( sizeof(int));
-  char *saida = (char*)malloc( sizeof(char)* 256);
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1, *p;
 
@@ -565,6 +562,8 @@ int client_LINHA(linha_comando *entrada, int socket) {
   p = protocolo_client("", ACK, 0, 0);
   string = protocolo_string(p);
   envia_protocolo(string, socket);
+  return 1;
+
 }
 
 void client_VER(linha_comando *entrada, int socket) {
@@ -624,7 +623,7 @@ void client_VER(linha_comando *entrada, int socket) {
 }
 
 void client_CD(linha_comando *entrada, int socket) {
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   char *string = (char*)malloc( sizeof(char)* 256);
@@ -664,7 +663,7 @@ void client_CD(linha_comando *entrada, int socket) {
 bool recebe_ls(estrutura_pacote * p1, int socket) {
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote * p;
-  int fd = 0;
+
   int time;
   struct pollfd fds[1];
   fds[0].fd = socket;
@@ -696,6 +695,8 @@ bool recebe_ls(estrutura_pacote * p1, int socket) {
       }
     }
   }
+  return 1;
+  
 }
 
 void client_LS(linha_comando *entrada, int socket) {
@@ -719,6 +720,7 @@ void client_LCD(linha_comando *entrada) {
 
 void client_LLS() {
   system ("ls");
+
 }
 
 void le_comando( linha_comando *entrada, int socket) {
