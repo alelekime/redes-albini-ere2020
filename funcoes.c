@@ -1,7 +1,5 @@
 #include "funcoes.h"
 
-//https://codeforwin.org/2018/03/c-program-find-file-properties-using-stat-function.html
-
 
 estrutura_pacote *protocolo(char *dado,int tipo, int tam, int seq) {
   char *novo = (char*)malloc(sizeof(char) * 15);
@@ -32,17 +30,29 @@ estrutura_pacote *protocolo_server(char *dado, int tipo, int tam, int seq) {
 
   p1 -> marcador = "01111110";
   p1 -> tamanho = acha_binario(tam);
-//  printf("TAMANHO DO DADO DE POIS DA FUNCAO ACHA BINARIO %d\n", p1->tamanho);
   p1 -> endereco_origem = "01";
   p1 -> endereco_destino ="10";
   p1 -> sequencia = seq;
   p1 -> tipo = tipo;
-  //printf("erro %s\n", int2bin(p1-> tamanho, 4));
   p1-> dados = dado;
   p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado, p1-> endereco_origem, p1->endereco_destino);
 
-//  mostra_protocolo(p1);
-  //printf("TAMANHO DO DADO NA FUNCAO CONVERT BINARIO %s\n",  convert_binary(p1 -> tamanho, binary));
+  return p1;
+}
+
+estrutura_pacote *protocolo_client(char *dado, int tipo, int tam, int seq) {
+  estrutura_pacote *p1 = (estrutura_pacote*)malloc(sizeof(estrutura_pacote));
+  char *binary = (char*)malloc( sizeof(char)* 4);
+
+  p1 -> marcador = "01111110";
+  p1 -> tamanho = acha_binario(tam);
+  p1 -> endereco_origem = "10";
+  p1 -> endereco_destino ="01";
+  p1 -> sequencia = seq;
+  p1 -> tipo = tipo;
+  p1-> dados = dado;
+  p1 -> pariedade = cal_pariedade(tam, seq, tipo, dado, p1-> endereco_origem, p1->endereco_destino);
+
   return p1;
 }
 
@@ -51,13 +61,10 @@ char *protocolo_string(estrutura_pacote * p1) {
   char *binary = (char*)malloc( sizeof(char)* 4);
 
   snprintf(string,256,"%s%s%s%s%s%s%s%s", p1 -> marcador,  p1 -> endereco_origem, p1 -> endereco_destino, convert_binary(p1 -> tamanho, binary), int2bin(p1-> sequencia, 4), int2bin(p1-> tipo, 4), p1 -> dados, int2bin(p1 -> pariedade, 8));
-
-//  printf(" string %s\n",string );
   return string;
 }
 
 int envia_protocolo(char *string, int socket) {
-//  printf("ENVIANDO PACOTE\n");
   if (strlen(string) > 5) {
     if ((send (socket, string, 256, 0)) == -1) {
   		perror("send");
@@ -118,7 +125,6 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *entrada_server++;
   }
   p -> tamanho = convert(soma);
-  //printf("%d\n",  p -> tamanho );
 
   soma = 0;
   aux1 = 1000;
@@ -131,7 +137,6 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
     *entrada_server++;
   }
   p -> sequencia = convert(soma);
-  //printf(" sequencia %d\n", p-> sequencia);
   soma = 0;
   aux1 = 1000;
   for (int i = 0; i < 4; i++) {
@@ -144,9 +149,6 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
   }
   p -> tipo = convert(soma);
 
-  // printf(" tipo %s\n", int2bin(p-> tipo, 4));
-  // printf(" tipo %d\n", p-> tipo);
-
   soma = 0;
   for (int i = 0; i < p-> tamanho; i++) {
     *dados1 = *entrada_server;
@@ -155,7 +157,6 @@ estrutura_pacote* abre_protocolo(char *entrada_server) {
   }
   p-> dados = strdup(pont);
 
-  //printf( "dentro = %s\n", p->dados);
   soma = 0;
   aux1 = 10000000;
   for (int i = 0; i < 8; i++) {
@@ -180,8 +181,8 @@ int client_EDIT(linha_comando *entrada, int socket){
   char *quebra = (char*)malloc( sizeof(char)* 15);
   char *string = (char*)malloc( sizeof(char)* 256);
   estrutura_pacote *p1, *p, *p2;
-  p1 = protocolo_server(entrada -> nome_arq,5, strlen(entrada-> nome_arq), 0);
-  printf("%d",p1->tamanho );
+  p1 = protocolo_client(entrada -> nome_arq,5, strlen(entrada-> nome_arq), 0);
+
 
   string = protocolo_string(p1);
   printf("%s\n", string);
@@ -211,7 +212,7 @@ int client_EDIT(linha_comando *entrada, int socket){
     }
   }
   snprintf(linha, 10, "%d",entrada -> linha);
-  p1 = protocolo_server(linha,5, strlen(linha), 1);
+  p1 = protocolo_client(linha,5, strlen(linha), 1);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
   fds[0].fd = socket;
@@ -241,7 +242,7 @@ int client_EDIT(linha_comando *entrada, int socket){
 
   i = strlen(entrada->dados);
   if (i < 15 ) {
-    p1 = protocolo_server(entrada->dados, 12, strlen(entrada->dados), 0);
+    p1 = protocolo_client(entrada->dados, 12, strlen(entrada->dados), 0);
     string = protocolo_string(p1);
     printf("%s\n", string);
     envia_protocolo(string, socket);
@@ -254,7 +255,6 @@ int client_EDIT(linha_comando *entrada, int socket){
       return 0;
     }else {
       string = recebe_protocolo(socket);
-      //printf( "chegando %s\n",string);
       p2 = abre_protocolo(string);
       if (p2 -> tipo == 8) {
         printf("ACK DO CLIENTE\n");
@@ -267,7 +267,7 @@ int client_EDIT(linha_comando *entrada, int socket){
     for (int j = 0; j < i/15; j++) {
       strncpy(quebra, entrada->dados,15);
       printf("%s\n", quebra);
-      p1 = protocolo_server(quebra, 12, strlen(quebra), j);
+      p1 = protocolo_client(quebra, 12, strlen(quebra), j);
       string = protocolo_string(p1);
       printf("%s\n", string);
       envia_protocolo(string, socket);
@@ -280,7 +280,6 @@ int client_EDIT(linha_comando *entrada, int socket){
         return 0;
       }else {
         string = recebe_protocolo(socket);
-        //printf( "chegando %s\n",string);
         p2 = abre_protocolo(string);
 
         if (p2 -> tipo == 8) {
@@ -294,8 +293,7 @@ int client_EDIT(linha_comando *entrada, int socket){
       }
     }
     if (k > 0) {
-      p1 = protocolo_server(entrada->dados, 12, strlen(entrada->dados), 0);
-      //printf("FIM %s\n", entrada->dados);
+      p1 = protocolo_client(entrada->dados, 12, strlen(entrada->dados), 0);
       string = protocolo_string(p1);
       printf("%s\n", string);
       envia_protocolo(string, socket);
@@ -308,7 +306,6 @@ int client_EDIT(linha_comando *entrada, int socket){
         return 0;
       }else {
         string = recebe_protocolo(socket);
-        //printf( "chegando %s\n",string);
         p2 = abre_protocolo(string);
 
         if (p2 -> tipo == 8) {
@@ -321,7 +318,7 @@ int client_EDIT(linha_comando *entrada, int socket){
 
   }
   printf("ACABOU\n");
-  p1 = protocolo_server("",13, 0, 0);
+  p1 = protocolo_client("",13, 0, 0);
   string = protocolo_string(p1);
   printf("%s\n", string);
   envia_protocolo(string, socket);
@@ -367,7 +364,7 @@ int client_LINHAS(linha_comando *entrada, int socket){
     }
   }
   snprintf(linha, 10, "%d",entrada -> linha_inicial);
-  p1 = protocolo_server(linha,4, strlen(linha), 1);
+  p1 = protocolo_client(linha,4, strlen(linha), 1);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
   time = poll(fds, 1, 3500);
@@ -392,7 +389,7 @@ int client_LINHAS(linha_comando *entrada, int socket){
   }
 
   snprintf(linha, 10, "%d",entrada -> linha_final);
-  p1 = protocolo_server(linha,4, strlen(linha), 1);
+  p1 = protocolo_client(linha,4, strlen(linha), 1);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
   fds[0].fd = socket;
@@ -432,36 +429,35 @@ int client_LINHAS(linha_comando *entrada, int socket){
 
       string = recebe_protocolo(socket);
       if (strlen(string) > 5){
-     //printf("%s\n", string);
         p1 = abre_protocolo(string);
         printf("%s", p1->dados);
         if (p1 -> tipo == 13) {
           printf("\nACABOU A TRANSMISSAO\n");
-          p2 = protocolo_server("", ACK, strlen(""), 0);
+          p2 = protocolo_client("", ACK, strlen(""), 0);
           string = protocolo_string(p2);
           envia_protocolo(string, socket);
           return 0;
         }else if (p1 -> tipo == 15 && !(strcmp(p1->dados, "3")) )  {
             printf("\nERRO ENCONTRADO NO ARQUIVO\n");
-            p2 = protocolo_server("", ACK, strlen(""), 0);
+            p2 = protocolo_client("", ACK, strlen(""), 0);
             string = protocolo_string(p2);
             envia_protocolo(string, socket);
             return 0;
         }else if (p1 -> tipo == 15 && !(strcmp(p1->dados, "4")) )  {
             printf("\nERRO ENCONTRADO %s\n NÃO EXISTE ESSA LINHA \n",p1->dados);
-            p2 = protocolo_server("", ACK, strlen(""), 0);
+            p2 = protocolo_client("", ACK, strlen(""), 0);
             string = protocolo_string(p2);
             envia_protocolo(string, socket);
             return 0;
         }else  if (p1 -> tipo == 15 && !(strcmp(p1->dados, "5")) )  {
-            p2 = protocolo_server("", ACK, strlen(""), 0);
+            p2 = protocolo_client("", ACK, strlen(""), 0);
             string = protocolo_string(p2);
             envia_protocolo(string, socket);
             printf("\nERRO ENCONTRADO, LINHA FINAL MENOR QUE A INICIAL\n");
             return 0;
         }
 
-        p2 = protocolo_server("", ACK, strlen(""), 0);
+        p2 = protocolo_client("", ACK, strlen(""), 0);
         string = protocolo_string(p2);
         envia_protocolo(string, socket);
       }
@@ -509,7 +505,7 @@ int client_LINHA(linha_comando *entrada, int socket) {
     }
   }
   snprintf(linha, 10, "%d",entrada -> linha);
-  p1 = protocolo_server(linha,3, strlen(linha), 1);
+  p1 = protocolo_client(linha,3, strlen(linha), 1);
   string = protocolo_string(p1);
   envia_protocolo(string, socket);
   time = poll(fds, 1, 3500);
@@ -546,8 +542,8 @@ int client_LINHA(linha_comando *entrada, int socket) {
     }else {
 
       string = recebe_protocolo(socket);
+
       if (strlen(string) > 5){
-        // printf("%s\n", string);
         p1 = abre_protocolo(string);
        printf("%s", p1->dados);
         if (p1-> tipo == 6) {
@@ -560,10 +556,15 @@ int client_LINHA(linha_comando *entrada, int socket) {
             printf("\nERRO ENCONTRADO %s\n%d NÃO EXISTE ESSA LINHA \n",p1->dados, entrada->linha);
             break;
         }
+        p = protocolo_client("", ACK, 0, 0);
+        string = protocolo_string(p);
+        envia_protocolo(string, socket);
       }
     }
   }
-
+  p = protocolo_client("", ACK, 0, 0);
+  string = protocolo_string(p);
+  envia_protocolo(string, socket);
 }
 
 void client_VER(linha_comando *entrada, int socket) {
@@ -611,14 +612,12 @@ void client_VER(linha_comando *entrada, int socket) {
           }
         }
       }
-      p = protocolo_server("", 8, 0, 0);
+      p = protocolo_client("", 8, 0, 0);
       saida = protocolo_string(p);
-      printf("%s\n", saida);
-
       envia_protocolo(saida, socket);
     }
   }
-  p = protocolo_server("", 8, 0, 0);
+  p = protocolo_client("", 8, 0, 0);
   saida = protocolo_string(p);
   printf("%s\n", saida);
   envia_protocolo(saida, socket);
@@ -645,8 +644,9 @@ void client_CD(linha_comando *entrada, int socket) {
       string = recebe_protocolo(socket);
       if (strlen(string) > 5) {
       p1 = abre_protocolo(string);
-      verifica(p1);
       printf("%s\n",string);
+      if(!strcmp(p1-> endereco_origem, "01"))
+        break;
       }
     }
   }
@@ -680,13 +680,13 @@ bool recebe_ls(estrutura_pacote * p1, int socket) {
       p1 = abre_protocolo(string);
       if (p1-> tipo == 11) {
         printf("%s", p1->dados);
-        p = protocolo_server("", ACK, strlen(""), 0);
+        p = protocolo_client("", ACK, strlen(""), 0);
         string = protocolo_string(p);
         envia_protocolo(string, socket);
         return true;
       }else if (p1-> tipo == 13){
         printf("Fim da transmissao\n");
-        p = protocolo_server("", ACK, strlen(""), 0);
+        p = protocolo_client("", ACK, strlen(""), 0);
         string = protocolo_string(p);
         envia_protocolo(string, socket);
         return false;

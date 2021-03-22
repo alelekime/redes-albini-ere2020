@@ -6,24 +6,21 @@ void server_CD(estrutura_pacote *p, int socket) {
   strncpy(novo, p-> dados, p->tamanho);
   char *string = (char*)malloc( sizeof(char)* 256);
   int tam;
-  verifica(p);
   estrutura_pacote *p1;
   tam = p-> tamanho;
-  printf("%d\n", tam);
-  printf("%s\n", novo);
   if (chdir(novo) == 0) {
 
     p1 = protocolo_server("", ACK, 0, 0);
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
+    printf("ACK - DEU CERTO PARA %s\n",novo);
     imprime_path();
   } else {
     p1 = protocolo_server("2", 15, strlen("2"), 0);
     string = protocolo_string(p1);
+    printf("ERRO - ENVIANDO NACK%s\n", string);
     envia_protocolo(string, socket);
   }
-
-
 }
 
 void server_VER(estrutura_pacote *p, int socket) {
@@ -48,8 +45,6 @@ void server_VER(estrutura_pacote *p, int socket) {
       }
       p1 = protocolo_server(caracters, 12, strlen(caracters), seq);
       string = protocolo_string(p1);
-      printf("%s\n", string);
-      printf("%d\n",seq );
       envia_protocolo(string, socket);
       time = poll(fds, 1, 3500);
       if (time == 0){
@@ -73,9 +68,10 @@ void server_VER(estrutura_pacote *p, int socket) {
     string = protocolo_string(p1);
     envia_protocolo(string, socket);
   }else{
-    printf("erro arq\n");
+    printf("ERRO NO ARQUIVO- ENVIANDO NACK\n");
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
+    printf("ERRO - ENVIANDO NACK%s\n", string);
     envia_protocolo(string, socket);
   }
   fds[0].fd = socket;
@@ -149,7 +145,6 @@ int server_EDIT(estrutura_pacote *p, int socket) {
         linha_arquivo++;
       }
 
-    //  printf("linha arquivo %d , linha %d \n",linha_arquivo, (linha) );
      if (linha_arquivo == linha - 1 ) {
         printf("LINHA ==== %d\n",linha_arquivo);
         while (1){
@@ -165,7 +160,6 @@ int server_EDIT(estrutura_pacote *p, int socket) {
 
             string = recebe_protocolo(socket);
             if (strlen(string) > 5){
-              //printf("%s\n", string);
               p1 = abre_protocolo(string);
               printf("%d\n", p1->tipo);
               if (p1 -> tipo == 13) {
@@ -175,11 +169,6 @@ int server_EDIT(estrutura_pacote *p, int socket) {
               printf("%s", p1->dados);
               tam = tam + strlen(p1->dados);
               fprintf(aux, "%s",p1->dados);
-              // if (!fwrite(p1->dados, 1, sizeof(p1->dados),aux)) {
-              //   printf("ERRO2\n");
-              //   perror("erro");
-              //   return 0;
-              // }
               fseek(aux, 0, SEEK_END);
               p1 = protocolo_server("", ACK, 0, 0);
               string = protocolo_string(p1);
@@ -187,12 +176,10 @@ int server_EDIT(estrutura_pacote *p, int socket) {
             }
           }
         }
-        printf("tamanho %d\n",tam );
         while (1) {
           if (!fread(caracter, 1, sizeof(char), arquivo)) {
             break;
           }
-          //printf("***************************%s\n",caracter );
           if (!strcmp(caracter, "\n")) {
             break;
           }
@@ -206,7 +193,7 @@ fclose(aux);
   }else {
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
-    printf("%s\n", string);
+    printf("ERRO - ENVIANDO NACK %s\n", string);
     envia_protocolo(string, socket);
   }
 
@@ -214,6 +201,9 @@ fclose(aux);
 }
 
 int server_LINHA(estrutura_pacote *p, int socket) {
+  int fd = 0;
+  int time;
+  struct pollfd fds[1];
   estrutura_pacote *p1, *p2;
   int linha;
   int linha_arquivo = 0;
@@ -256,8 +246,6 @@ int server_LINHA(estrutura_pacote *p, int socket) {
           if (!fread(caracter, sizeof(char), 1, arquivo)) {
             break;
           }
-
-          printf("%s\n",caracter );
           if(!strcmp(caracter, "\n")){
             if (t == 0) {
               p1 = protocolo_server("", 6, strlen(""), 0);
@@ -280,6 +268,18 @@ int server_LINHA(estrutura_pacote *p, int socket) {
           p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
           string = protocolo_string(p1);
           envia_protocolo(string, socket);
+          if (time == 0){
+            printf("TIMEOUT!\n");
+            return 0;
+          }else {
+            string = recebe_protocolo(socket);
+            p2 = abre_protocolo(string);
+            if (p2 -> tipo == 8) {
+              printf("ACK DO CLIENTE\n");
+            }else if (p2->tipo == 9) {
+              envia_protocolo(string, socket);
+            }
+          }
         } else {
           k = i % 15;
           for (int j = 0; j < i/15; j++) {
@@ -288,6 +288,18 @@ int server_LINHA(estrutura_pacote *p, int socket) {
             p1 = protocolo_server(quebra, 12, strlen(quebra), j);
             string = protocolo_string(p1);
             envia_protocolo(string, socket);
+            if (time == 0){
+              printf("TIMEOUT!\n");
+              return 0;
+            }else {
+              string = recebe_protocolo(socket);
+              p2 = abre_protocolo(string);
+              if (p2 -> tipo == 8) {
+                printf("ACK DO CLIENTE\n");
+              }else if (p2->tipo == 9) {
+                envia_protocolo(string, socket);
+              }
+            }
             for (int l = 0; l < 15; l++) {
               string_linha++;
             }
@@ -297,10 +309,35 @@ int server_LINHA(estrutura_pacote *p, int socket) {
             printf("FIM %s\n", string_linha);
             string = protocolo_string(p1);
             envia_protocolo(string, socket);
+            if (time == 0){
+              printf("TIMEOUT!\n");
+              return 0;
+            }else {
+              string = recebe_protocolo(socket);
+              p2 = abre_protocolo(string);
+              if (p2 -> tipo == 8) {
+                printf("ACK DO CLIENTE\n");
+              }else if (p2->tipo == 9) {
+                envia_protocolo(string, socket);
+              }
+            }
           }
           p1 = protocolo_server("", 1101, 0, 0);
           string = protocolo_string(p1);
           envia_protocolo(string, socket);
+          if (time == 0){
+            printf("TIMEOUT!\n");
+            return 0;
+          }else {
+            string = recebe_protocolo(socket);
+            //printf( "chegando %s\n",string);
+            p2 = abre_protocolo(string);
+            if (p2 -> tipo == 8) {
+              printf("ACK DO CLIENTE\n");
+            }else if (p2->tipo == 9) {
+              envia_protocolo(string, socket);
+            }
+          }
 
         }
         return 0;
@@ -310,15 +347,39 @@ int server_LINHA(estrutura_pacote *p, int socket) {
 
     p1 = protocolo_server("4", 15, strlen("4"), 0);
     string = protocolo_string(p1);
-    printf("%s\n", string);
+    printf("ERRO - ENVIANDO NACK %s\n", string);
     envia_protocolo(string, socket);
+    if (time == 0){
+      printf("TIMEOUT!\n");
+      return 0;
+    }else {
+      string = recebe_protocolo(socket);
+      p2 = abre_protocolo(string);
+      if (p2 -> tipo == 8) {
+        printf("ACK DO CLIENTE\n");
+      }else if (p2->tipo == 9) {
+        envia_protocolo(string, socket);
+      }
+    }
 
 
   }else {
     p1 = protocolo_server("3", 15, strlen("3"), 0);
     string = protocolo_string(p1);
-    printf("%s\n", string);
+    printf("ERRO - ENVIANDO NACK %s\n", string);
     envia_protocolo(string, socket);
+    if (time == 0){
+      printf("TIMEOUT!\n");
+      return 0;
+    }else {
+      string = recebe_protocolo(socket);
+      p2 = abre_protocolo(string);
+      if (p2 -> tipo == 8) {
+        printf("ACK DO CLIENTE\n");
+      }else if (p2->tipo == 9) {
+        envia_protocolo(string, socket);
+      }
+    }
   }
 
 
@@ -343,7 +404,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
       if (!fread(caracter, sizeof(char), 1, arquivo)) {
         break;
       }
-    //  printf("%s", caracter);
       if (!strcmp(caracter, "\n")) {
         linha_arquivo++;
       }
@@ -363,7 +423,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
 
           t++;
         }
-      //  fclose(arquivo);
         i = strlen(string_linha);
         if (i < 15 ) {
           p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
@@ -379,7 +438,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
             return 0;
           }else {
             string = recebe_protocolo(socket);
-            //printf( "chegando %s\n",string);
             p2 = abre_protocolo(string);
             if (p2 -> tipo == 8) {
               printf("ACK DO CLIENTE\n");
@@ -404,7 +462,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
               return 0;
             }else {
               string = recebe_protocolo(socket);
-              //printf( "chegando %s\n",string);
               p2 = abre_protocolo(string);
 
               if (p2 -> tipo == 8) {
@@ -419,7 +476,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
           }
           if (k > 0) {
             p1 = protocolo_server(string_linha, 12, strlen(string_linha), 0);
-            //printf("FIM %s\n", string_linha);
             string = protocolo_string(p1);
             printf("%s\n", string);
             envia_protocolo(string, socket);
@@ -432,7 +488,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
               return 0;
             }else {
               string = recebe_protocolo(socket);
-              //printf( "chegando %s\n",string);
               p2 = abre_protocolo(string);
 
               if (p2 -> tipo == 8) {
@@ -444,7 +499,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
           }
 
         }
-        //fclose(arquivo);
         return 0;
       }
 
@@ -452,7 +506,7 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
 
     p1 = protocolo_server("4", 15, strlen("4"), 0);
     string = protocolo_string(p1);
-    //printf("%s\n", string);
+    printf("ERRO - ENVIANDO NACK%s\n", string);
     envia_protocolo(string, socket);
     fds[0].fd = socket;
     fds[0].events = 0;
@@ -463,7 +517,6 @@ int LINHAS(FILE *arquivo, int linha, int socket) {
       return 0;
     }else {
       string = recebe_protocolo(socket);
-      //printf( "chegando %s\n",string);
       p2 = abre_protocolo(string);
 
       if (p2 -> tipo == 8) {
@@ -518,7 +571,7 @@ int server_LINHAS(estrutura_pacote *p, int socket){
   if (linha2 < linha1) {
     p1 = protocolo_server("5", 15, strlen("5"), 0);
     string = protocolo_string(p1);
-    printf("%s\n", string);
+    printf("ERRO - ENVIANDO NACK%s\n", string);
     envia_protocolo(string, socket);
   } else{
     FILE *arquivo = fopen (p->dados,"r");
@@ -541,7 +594,7 @@ int server_LINHAS(estrutura_pacote *p, int socket){
       perror("Error printed by perror");
       p1 = protocolo_server("3", 15, strlen("3"), 0);
       string = protocolo_string(p1);
-      printf("ERRO %s\n", string);
+      printf("ERRO - ENVIANDO NACK%s\n", string);
       envia_protocolo(string, socket);
       fds[0].fd = socket;
       fds[0].events = 0;
@@ -552,7 +605,6 @@ int server_LINHAS(estrutura_pacote *p, int socket){
         return 0;
       }else {
         string = recebe_protocolo(socket);
-        //printf( "chegando %s\n",string);
         p2 = abre_protocolo(string);
         if (p2 -> tipo == 8) {
           printf("ACK DO CLIENTE\n");
@@ -599,13 +651,11 @@ int split_string(char *string,int cont, int tam, int socket) {
   while (tam > 15) {
     strncpy(quebra, string, 15);
     tam2= strlen(quebra);
-    printf(" DADO DENTRO DO WHILE  %s %d\n ", quebra,tam2);
     p1 = protocolo_server(quebra, 11, tam2, cont);
     ultima_mensagem = protocolo_string(p1);
     printf(" MESANGEM INDO PARA O CLIENTE%s\n", ultima_mensagem);
     envia_protocolo(ultima_mensagem, socket);
     recebe = recebe_protocolo(socket);
-    //printf( "chegando %s\n",string);
     p2 = abre_protocolo(recebe);
     if (p2->tipo == 8) {
       printf("ACK DO CLIENTE\n");
@@ -620,10 +670,8 @@ int split_string(char *string,int cont, int tam, int socket) {
 
   p1 = protocolo_server(string, 11, strlen(string), cont);
   ultima_mensagem = protocolo_string(p1);
-  printf( "SAIU DO WHILE, FINAL DO DADO  %s\n", ultima_mensagem);
   envia_protocolo(ultima_mensagem, socket);
   recebe = recebe_protocolo(socket);
-  //printf( "chegando %s\n",string);
   p2 = abre_protocolo(recebe);
   if (p2->tipo == 8) {
     printf("ACK DO CLIENTE\n");
@@ -678,7 +726,6 @@ int server_LS(estrutura_pacote *p, int socket) {
             break;
         }else {
           string = recebe_protocolo(socket);
-          //printf( "chegando %s\n",string);
           p2 = abre_protocolo(string);
           cont++;
           if (p2->tipo == 8) {
@@ -712,7 +759,6 @@ int server_LS(estrutura_pacote *p, int socket) {
         return 0;
     }else {
       string = recebe_protocolo(socket);
-      //printf( "chegando %s\n",string);
       p2 = abre_protocolo(string);
       cont++;
 
@@ -738,7 +784,7 @@ void funcoes_server(int socket_confirmado) {
       imprime_path();
       printf(" PACOTE RECEBIDO = %s\n",entrada_server );
       estrutura_pacote *p = abre_protocolo(entrada_server);
-      printf("%d\n", p-> tipo);
+
       switch (p -> tipo) {
         case 0:       //CD
           server_CD(p, socket_confirmado);
@@ -756,12 +802,11 @@ void funcoes_server(int socket_confirmado) {
           server_LINHAS(p, socket_confirmado);
           break;
         case 5:     //EDIT
-        server_EDIT(p, socket_confirmado);
-
+          server_EDIT(p, socket_confirmado);
           break;
-        default:
-          printf("ERRO NO TIPO \n");
+
       }
+      imprime_path();
     }
   }
 }

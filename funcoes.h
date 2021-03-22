@@ -93,3 +93,4 @@ char * convert_binary(int dec, char *output);
 int client_LINHA(linha_comando *entrada, int socket) ;
 int stringToDecimal(char * str);
 int verifica(estrutura_pacote *p);
+estrutura_pacote *protocolo_client(char *dado, int tipo, int tam, int seq);
